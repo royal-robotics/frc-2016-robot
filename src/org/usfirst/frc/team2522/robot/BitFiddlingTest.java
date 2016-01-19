@@ -42,7 +42,7 @@ public class BitFiddlingTest {
 		System.out.println("THIS SHOULD PRINT FIRST");
 	}
 	
-	//Non-blocking new Thread sleep method
+	//Non-blocking new Thread sleep method (best)
 	public static void test3() {
 		Thread ThreadTest = (new Thread() {
 			public void run() {

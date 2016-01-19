@@ -13,5 +13,17 @@ public class LEDRegister {
 		this.green = green;
 		this.blue = blue;
 	}
+	
+	public Byte getRed() {
+		return red;
+	}
+	
+	public Byte getGreen() {
+		return green;
+	}
+	
+	public Byte getBlue() {
+		return blue;
+	}
 
 }

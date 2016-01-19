@@ -19,12 +19,11 @@ public class LEDController {
 	}
 	
 	public void writeRegister() {
-		clock.set(false);
-		Byte red = Byte.MAX_VALUE;
-		writeByte(red);
+		writeByte();
 	}
 	
-	public void writeByte(Byte data) {
-		(new LEDRegOutThread()).start();
+	public void writeByte() {
+		LEDRegOutThread regThread = new LEDRegOutThread(clock, dataOut, register.getRed(), register.getGreen(), register.getBlue());
+		regThread.start();
 	}
 }
