@@ -1,19 +1,26 @@
 package org.usfirst.frc.team2522.robot;
 
 import java.util.*;
+import java.awt.*;
 import java.lang.*;
 
 public class BitFiddlingTest {
 
 	public static void main(String[] args) {
-		//test1();
+		test1();
 		//test2();
-		test3();
+		//test3();
+		
+		/*Color c = new Color (255, 0, 0);
+		System.out.println(c.getRed());
+		System.out.println(c.getGreen());
+		System.out.println(c.getBlue());*/
 	}
 	
 	//Blocking method with sleeps (BAD)
 	public static void test1() {	
-		Byte red = (byte) 0b11000011;
+		//Byte red = (byte) 0b11000011;
+		int red = 0b11000011;
 		System.out.println(red);
 		for(int i = 0; i < 8; i++) {
 			if(((byte)red & (0b00000001 << i)) > 0) {
