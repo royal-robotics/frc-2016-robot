@@ -4,30 +4,27 @@ package org.usfirst.frc.team2522.robot;
 import edu.wpi.first.wpilibj.*;
 
 import java.lang.*;
+import java.awt.*;
 
 public class LEDRegOutThread extends Thread {
 	
-	private Byte rData;
-	private Byte gData;
-	private Byte bData;
+	private Color ledColor;
 	private DigitalOutput clock;
 	private DigitalOutput dataOut;
 	
-	public LEDRegOutThread(DigitalOutput clock, DigitalOutput dataOut, Byte rData, Byte gData, Byte bData) {
+	public LEDRegOutThread(DigitalOutput clock, DigitalOutput dataOut, Color ledColor) {
 		this.clock = clock;
 		this.dataOut = dataOut;
-		this.rData = rData;
-		this.gData = gData;
-		this.bData = bData;
+		this.ledColor = ledColor;
 	}
 	
 	public void run() {
-		writeColor(clock, dataOut, rData);
-		writeColor(clock, dataOut, gData);
-		writeColor(clock, dataOut, bData);
+		writeColor(clock, dataOut, ledColor.getRed());
+		writeColor(clock, dataOut, ledColor.getGreen());
+		writeColor(clock, dataOut, ledColor.getBlue());
 	}
 	
-	private void writeColor(DigitalOutput clock, DigitalOutput dataOut, Byte data) {
+	private void writeColor(DigitalOutput clock, DigitalOutput dataOut, int data) {
 		for(int i = 0; i < 8; i++) {
 			clock.set(false);
 			sleep(0, 100);

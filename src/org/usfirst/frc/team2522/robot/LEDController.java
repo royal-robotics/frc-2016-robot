@@ -1,6 +1,7 @@
 package org.usfirst.frc.team2522.robot;
 
 import java.lang.*;
+import java.awt.*;
 
 import edu.wpi.first.wpilibj.*;
 
@@ -9,21 +10,16 @@ import org.usfirst.frc.team2522.robot.*;
 
 //This is for the LEDController 2.0 (16 million colors)
 public class LEDController {
-	
-	private LEDRegister register;
+	public Color ledColor;
 	private DigitalOutput clock;
 	private DigitalOutput dataOut;
 	
 	public LEDController() {
-		register = new LEDRegister(Byte.MIN_VALUE, Byte.MIN_VALUE, Byte.MIN_VALUE);
+		ledColor = new Color(0, 0, 0);
 	}
 	
-	public void writeRegister() {
-		writeByte();
-	}
-	
-	public void writeByte() {
-		LEDRegOutThread regThread = new LEDRegOutThread(clock, dataOut, register.getRed(), register.getGreen(), register.getBlue());
+	public void writeColor() {
+		LEDRegOutThread regThread = new LEDRegOutThread(clock, dataOut, ledColor);
 		regThread.start();
 	}
 }
