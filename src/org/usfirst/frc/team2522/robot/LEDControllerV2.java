@@ -9,12 +9,12 @@ import org.usfirst.frc.team2522.robot.*;
 
 
 //This is for the LEDController 2.0 (16 million colors)
-public class LEDController {
+public class LEDControllerV2 {
 	public Color ledColor;
 	private DigitalOutput clock;
 	private DigitalOutput dataOut;
 	
-	public LEDController() {
+	public LEDControllerV2() {
 		ledColor = new Color(0, 0, 0);
 	}
 	
