@@ -51,10 +51,11 @@ public class Robot extends IterativeRobot {
 	// DIO ports //
 	LEDControllerV2 led = new LEDControllerV2(new DigitalOutput(0), new DigitalOutput(1));
 
-	// <Pulses Per Rotation> * <Third Stage Down Gearing> / <Encoder Mount Up Gearing> * <Wheel Diameter in Inches> * <Pi>
-	public static double driveTranDistancePerPulse = 256.0 * 2.5 / 3.0 * 6.0 * 3.1415;
+	// <Pulses Per Rotation> * <Encoder Mount Up Gearing> <Third Stage Down Gearing> /  * <Wheel Diameter in Inches> * <Pi>
+	public static double driveTranDistancePerPulse = 256.0 * (12.0 / 36.0) * (60.0 / 24.0) * 6.0 * 3.1415;
 	
-	public static double climberTranDistancePerPulse = 360.0; // TODO: finish this calculation
+	// <Pulses Per Rotation> * <Down Gearing> * <Wheel Diameter in Inches> * <Pi>
+	public static double climberTranDistancePerPulse = 360.0 * (42.0 / 60.0) * 1.375 * 3.1415;
 	
 	Encoder rightDriveEncoder = new Encoder(new DigitalInput(2), new DigitalInput(3));
 	Encoder leftDriveEncoder = new Encoder(new DigitalInput(4), new DigitalInput(5));
@@ -241,7 +242,7 @@ public class Robot extends IterativeRobot {
     public void updateDashboard()
     {
     	SmartDashboard.putNumber("Gyro", mxp.getAngle());
-    	SmartDashboard.putNumber("Velocity f/s", mxp.getVelocityX() * 0.3048);
+    	SmartDashboard.putNumber("Velocity f/s", mxp.getVelocityX() * 0.3048 /*(f/M)*/);
 
     	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kReverse) ? "Low" : "High");
     	SmartDashboard.putString("Drive Mode", arcadeMode ? "Arcade" : "Tank");
@@ -255,6 +256,8 @@ public class Robot extends IterativeRobot {
     	SmartDashboard.putNumber("RS Motor", rightShooterWheel.get());
     	SmartDashboard.putNumber("LS Speed", leftShooterWheel.getSpeed());
     	SmartDashboard.putNumber("RS Speed", rightShooterWheel.getSpeed());
+    	SmartDashboard.putNumber("LS Error", leftShooterWheel.getClosedLoopError());
+    	SmartDashboard.putNumber("RS Error", rightShooterWheel.getClosedLoopError());
     	
     	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
     	SmartDashboard.putNumber("Arm Angle", (armAngle.pidGet() - armController.fullyExtendedVoltage) / ArmController.voltsPerDegree);
