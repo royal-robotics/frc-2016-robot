@@ -1,8 +1,5 @@
 package org.usfirst.frc.team2522.robot;
 
-import java.lang.*;
-import java.awt.*;
-
 import edu.wpi.first.wpilibj.*;
 
 import org.usfirst.frc.team2522.robot.*;
@@ -10,12 +7,14 @@ import org.usfirst.frc.team2522.robot.*;
 
 //This is for the LEDController 2.0 (16 million colors)
 public class LEDControllerV2 {
-	public Color ledColor;
+	public LEDColor ledColor;
 	private DigitalOutput clock;
 	private DigitalOutput dataOut;
 	
-	public LEDControllerV2() {
-		ledColor = new Color(0, 0, 0);
+	public LEDControllerV2(DigitalOutput clockPort, DigitalOutput dataPort) {
+		this.clock = clockPort;
+		this.dataOut = dataPort;
+		ledColor = new LEDColor(0, 0, 0);
 	}
 	
 	public void writeColor() {

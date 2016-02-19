@@ -3,16 +3,13 @@ package org.usfirst.frc.team2522.robot;
 
 import edu.wpi.first.wpilibj.*;
 
-import java.lang.*;
-import java.awt.*;
-
 public class LEDRegOutThread extends Thread {
 	
-	private Color ledColor;
+	private LEDColor ledColor;
 	private DigitalOutput clock;
 	private DigitalOutput dataOut;
 	
-	public LEDRegOutThread(DigitalOutput clock, DigitalOutput dataOut, Color ledColor) {
+	public LEDRegOutThread(DigitalOutput clock, DigitalOutput dataOut, LEDColor ledColor) {
 		this.clock = clock;
 		this.dataOut = dataOut;
 		this.ledColor = ledColor;
@@ -27,12 +24,12 @@ public class LEDRegOutThread extends Thread {
 	private void writeColor(DigitalOutput clock, DigitalOutput dataOut, int data) {
 		for(int i = 0; i < 8; i++) {
 			clock.set(false);
-			sleep(0, 100);
+			sleep(0, 10);
 			
 			dataOut.set((data & (0b00000001 << i)) > 0);
 			
 			clock.set(true);
-			sleep(0, 100);
+			sleep(0, 10);
 		}
 	}
 	
