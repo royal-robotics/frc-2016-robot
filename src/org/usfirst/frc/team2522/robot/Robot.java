@@ -32,196 +32,191 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * 2016 FRC Robot
  */
 public class Robot extends IterativeRobot {
-	
+	// Gyro / Accelerometer sensor //
+	AHRS mxp = new AHRS(SPI.Port.kMXP);
+
 	// Motor controllers //
-	VictorSP leftDrive;
-	VictorSP rightDrive;
-	VictorSP roller;
-	VictorSP climber;
-	ArmMotor armMotor;
+	VictorSP leftDrive = new VictorSP(1);
+	VictorSP rightDrive = new VictorSP(5);
+	VictorSP armMotor = new VictorSP(3);
+	VictorSP roller = new VictorSP(7);
+	VictorSP climber = new VictorSP(6);
 	
-	CANTalon leftShooterWheel;
-	CANTalon rightShooterWheel;
+	CANTalon leftShooterWheel = new CANTalon(0);
+	CANTalon rightShooterWheel = new CANTalon(1);
 		
-	// Pot sensor //
-	AnalogInput armAngle;
-	ArmController armController;
+	// Analog sensors //
+	AnalogInput armAngle = new AnalogInput(0);
+
+	// DIO ports //
+	LEDControllerV2 led = new LEDControllerV2(new DigitalOutput(0), new DigitalOutput(1));
+
+	// <Pulses Per Rotation> * <Third Stage Down Gearing> / <Encoder Mount Up Gearing> * <Wheel Diameter in Inches> * <Pi>
+	public static double driveTranDistancePerPulse = 256.0 * 2.5 / 3.0 * 6.0 * 3.1415;
 	
-	// Solenoids //
-	DoubleSolenoid shifter;
-	DoubleSolenoid climbLock;
-	DoubleSolenoid kicker;
-	DoubleSolenoid intake;
+	public static double climberTranDistancePerPulse = 360.0; // TODO: finish this calculation
 	
-	// Encoders //
-	Encoder leftDriveEncoder;
-	Encoder rightDriveEncoder;
-	Encoder climberEncoder;
+	Encoder rightDriveEncoder = new Encoder(new DigitalInput(2), new DigitalInput(3));
+	Encoder leftDriveEncoder = new Encoder(new DigitalInput(4), new DigitalInput(5));
+	Encoder climberEncoder = new Encoder(new DigitalInput(6), new DigitalInput (7));
+
+	DigitalInput shooterHome = new DigitalInput(8);	// limit switch	
 	
-	// LED's //
-	DigitalOutput ledClock;
-	DigitalOutput ledData;
-	LEDControllerV2 led;
-	
+	// Pneumatic Solenoids //
+	DoubleSolenoid shifter = new DoubleSolenoid(0,7);
+	DoubleSolenoid climbLock = new DoubleSolenoid(1,6);
+	DoubleSolenoid kicker = new DoubleSolenoid(2,5);
+	DoubleSolenoid intake = new DoubleSolenoid(4, 3);
+		
 	// Joysticks //
-	Joystick leftstick;
-	Joystick rightstick;
-	Joystick operatorstick;
+	Joystick leftstick = new Joystick(0);
+	Joystick rightstick = new Joystick(1);
+	Joystick operatorstick = new Joystick(2);
+	
+	// PID Controllers
+	ArmController armController;
 	
 	// Drive //
 	RobotDrive myDrive;
+	boolean driveModeToggle = false;
+	boolean arcadeMode = false;
 	
-	// Gyro sensor //
-	AHRS mxp;
+	/**
+	 *	This function is called when the robot code is first launched 
+	 */
+	public void robotInit()
+	{
+        // Initialize Arm PID Controller
+        armController = new ArmController(armAngle, armMotor);
+        armController.setSetpoint(armAngle.pidGet());
+        armController.enable();
 
-	
-    // Init toggle values
-    boolean shiftToggle = false;
-    boolean shiftPressed = false;
-
-    /**
-     * This function is called periodically during operator control
-     */
-    int tempColor = 0;
-    boolean clockOn = false;
-    boolean previousButtonClock = false;
-    boolean dataOn = false;
-    boolean previousButtonData = false;
-
-	public void robotInit() {
-		
-		//leds = new LEDController(new DigitalOutput(16), new DigitalOutput(10), new DigitalOutput(11));
-    	//leds = new LEDController(new DigitalOutput(16), new DigitalOutput(18), new DigitalOutput(19));
-    	//do0.set(true);
-    	//do1.set(true);
-    	//leds.setColor(LEDUtil.Color.WHITE);
-
-		//Init DIO ports (encoders)//
-		leftDriveEncoder = new Encoder(new DigitalInput(4), new DigitalInput(5));
-		rightDriveEncoder = new Encoder(new DigitalInput(2), new DigitalInput(3));
-		climberEncoder = new Encoder(new DigitalInput(6), new DigitalInput (7));
-
+        // Initialize pneumatic solenoids in their default positions;
+        shifter.set(DoubleSolenoid.Value.kReverse);
+        intake.set(DoubleSolenoid.Value.kReverse);
+        kicker.set(DoubleSolenoid.Value.kReverse);
+        climbLock.set(DoubleSolenoid.Value.kReverse);    
     	
-		//Init motors
-		rightDrive = new VictorSP(5);
-		leftDrive = new VictorSP(1);
-		roller = new VictorSP(7);
-		climber = new VictorSP(6);
+        // Initialize Encoder Distances
+        leftDriveEncoder.setDistancePerPulse(driveTranDistancePerPulse);
+        rightDriveEncoder.setDistancePerPulse(driveTranDistancePerPulse);
+        climberEncoder.setDistancePerPulse(climberTranDistancePerPulse);
+
+        // Initialize CAN Shooter Motor Controllers
+        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Speed);
+		leftShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
+		leftShooterWheel.reverseSensor(false);
+		leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
+		leftShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
+		leftShooterWheel.setProfile(0);
+		leftShooterWheel.setF(0.1);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
+		leftShooterWheel.setP(0);
+		leftShooterWheel.setI(0);
+		leftShooterWheel.setD(0);
 		
-		leftShooterWheel = new CANTalon(0);
-		rightShooterWheel = new CANTalon(1);
-		
-		// Init solenoids //
-		shifter = new DoubleSolenoid(0,7);
-		climbLock = new DoubleSolenoid(1,6);
-		kicker = new DoubleSolenoid(2,5);
-		intake = new DoubleSolenoid(3,4);
-		
-		// Init Joysticks //
-        leftstick = new Joystick(0);
-        rightstick = new Joystick(1);
-        operatorstick = new Joystick(2);
+		rightShooterWheel.reverseSensor(true);
+		rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.Follower);
+		rightShooterWheel.set(leftShooterWheel.getDeviceID());	// This tells the right motor controller to follow the left one.
+
         
-        // Init LED's //
-        ledClock = new DigitalOutput(0);
-        ledData = new DigitalOutput(1);
-        led = new LEDControllerV2(ledClock, ledData);
-    
-    	
-        // Init drive //
+        // Initialize drive //
     	myDrive = new RobotDrive(leftDrive, rightDrive);
         myDrive.setExpiration(0.1);
-//        myDrive.setInvertedMotor(MotorType.kFrontLeft, true);
-//        myDrive.setInvertedMotor(MotorType.kFrontRight, true);
-        
-        // Init pot sensor //
-        armAngle= new AnalogInput(0);
-		armMotor = new ArmMotor(3, armAngle,2.856);  
-        
-        armController = new ArmController(armMotor, armAngle);
-        
-        // Init gyro sensor //
-		mxp = new AHRS(SPI.Port.kMXP);
     }
 
+	/**
+	 * This function is called at the beginning of the autonomous period
+	 */
+	public void autonomousInit()
+	{
+		mxp.reset(); 	// reset the gyro setting to zero before autonomous starts so that we have a fixed bearing.
+		
+		leftDriveEncoder.reset();	// reset encoder distances for start of autonomous.
+		rightDriveEncoder.reset(); 
+	}
+	
     /**
      * This function is called periodically during autonomous
      */
-    public void autonomousPeriodic() {
-    
+    public void autonomousPeriodic()
+    {
     	updateDashboard();
     }
 
+    /**
+	 * This function is called at the beginning of the teleop period
+     */
+    public void teleopInit()
+    {
     
-    public void teleopPeriodic() {
-    	/*if(tempColor == 255) {
-    		tempColor = 0;
-    	} else {
-    		tempColor++;
-    	}*/
+    }
+    
+    
+    /**
+     * This function is called periodically during teleop
+     */
+    public void teleopPeriodic()
+    {
+    	if (shooterHome.get()) {
+    		armController.setHomeVoltage(armAngle.pidGet());
+    	}
     	
-    	    	
-        //led.ledColor = new LEDColor(255, 0, 0);
-        //led.writeColor();
-    	if(rightstick.getRawButton(1) && !previousButtonData) {
-    		dataOn = !dataOn;
-    		if(dataOn) {
-    			led.ledColor = new LEDColor(64, 0, 0);
-                led.writeColor();	
-    		} else {
-    			led.ledColor = new LEDColor(255, 0, 32);
-                led.writeColor();
+    	
+    	OperatorController.operateArm(this);
+    	
+    	OperatorController.operatePickup(this);
+    	
+    	OperatorController.operateShooter(this);
+    	
+    	OperatorController.operateClimber(this);
+    	
+    	
+    	// Check for and toggle the drive mode from tank to arcade if button 3 on left stick is pressed.
+    	//
+    	if (leftstick.getRawButton(3) && !driveModeToggle) {
+    		if (!driveModeToggle) {
+    			arcadeMode = ! arcadeMode;
+        		driveModeToggle = true;
     		}
-    		//ledData.set(dataOn);
     	}
-    	previousButtonData = rightstick.getRawButton(1);
-    	
-    	if (leftstick.getRawButton(3)){
-    		myDrive.arcadeDrive(leftstick);
-    	}
-    	else{
-    		myDrive.tankDrive(leftstick, rightstick);
+    	else {
+    		driveModeToggle = false;
     	}
     	
-    	// TODO: TEST CODE REMOVE BEFORE COMPITITON
-    	if (leftstick.getRawButton(5))
+    	// Shift to high gear if either stick button 1 is pressed.
+    	//
+    	if (leftstick.getRawButton(1) || rightstick.getRawButton(1))
     	{
-    		if (! armController.isEnabled())
-    		{
-    			armController.enable();    		
-        		armController.setSetpoint(-10.0);	
-    		}
+    		shifter.set(DoubleSolenoid.Value.kForward);
     	}
     	else
     	{
-    		if (armController.isEnabled()){
-    			armController.disable();
-    			armMotor.set(0.0);
-    		}
-    	}
-    	
-    	
-    	OperatorController.startOperator(this);
-    	if (leftstick.getRawButton(1)){
-    		if (!shiftPressed){
-    			shiftToggle = !shiftToggle;
-    		}
-    		shiftPressed = true;
-    	}
-    	else{
-    		shiftPressed = false;
-    	}
-    	if(shiftToggle){
-    		shifter.set(DoubleSolenoid.Value.kForward);
-    	}
-    	else{
     		shifter.set(DoubleSolenoid.Value.kReverse);
     	}
+
+    	// Drive the robot
+    	//
+    	if (arcadeMode) {
+    		myDrive.arcadeDrive(leftstick);
+    	}
+    	else {
+    		myDrive.tankDrive(leftstick, rightstick);
+    	}    	
     	
     	updateDashboard();
     }
 
-    
+    /**
+     * 
+     */
+    public void disabledInit()
+    {
+    	updateDashboard();
+    }
+
+    /**
+     * 
+     */
     public void disabledPeriodic()
     {
     	updateDashboard();
@@ -231,35 +226,47 @@ public class Robot extends IterativeRobot {
     /**
      * This function is called periodically during test mode
      */
-    public void testPeriodic() {
-    
+    public void testPeriodic()
+    {
     	updateDashboard();
     }
     
-    public void updateDashboard() {
-    	
-    	// Output Encoders
-    	//
-    	SmartDashboard.putNumber("Right Encoder", rightDriveEncoder.getRaw());
-    	SmartDashboard.putNumber("Left Encoder", leftDriveEncoder.getRaw());
-
-    	
+    /**************************************************************************************
+     * Helper methods for the robot.
+     */
+    
+    /**
+     * All dashboard updating should be done here, so that the values are updated in all robot operation modes.
+     */
+    public void updateDashboard()
+    {
     	SmartDashboard.putNumber("Gyro", mxp.getAngle());
+    	SmartDashboard.putNumber("Velocity f/s", mxp.getVelocityX() * 0.3048);
 
-    	//SmartDashboard.putBoolean("LED1", dataOn);
-    	//SmartDashboard.putBoolean("LED2", clockOn);
+    	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kReverse) ? "Low" : "High");
+    	SmartDashboard.putString("Drive Mode", arcadeMode ? "Arcade" : "Tank");
+    	SmartDashboard.putNumber("LE Raw", leftDriveEncoder.getRaw());
+    	SmartDashboard.putNumber("RE Raw", rightDriveEncoder.getRaw());
+    	SmartDashboard.putNumber("LE Inches.", leftDriveEncoder.getDistance());
+    	SmartDashboard.putNumber("RE Inches", rightDriveEncoder.getDistance());
+    	
+
+    	SmartDashboard.putNumber("LS Motor", leftShooterWheel.get());
+    	SmartDashboard.putNumber("RS Motor", rightShooterWheel.get());
+    	SmartDashboard.putNumber("LS Speed", leftShooterWheel.getSpeed());
+    	SmartDashboard.putNumber("RS Speed", rightShooterWheel.getSpeed());
+    	
+    	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
+    	SmartDashboard.putNumber("Arm Angle", (armAngle.pidGet() - armController.fullyExtendedVoltage) / ArmController.voltsPerDegree);
 
     	SmartDashboard.putNumber("Arm Motor", armMotor.get());
-    	
-    	SmartDashboard.putNumber("ArmAngle Volts", armAngle.getAverageVoltage());
-    	SmartDashboard.putNumber("ArmAngle Deg", (armAngle.getAverageVoltage() - armMotor.m_FullyExtededVoltage)  / ArmController.voltsPerdegree);
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
     	SmartDashboard.putNumber("Arm Error", armController.getAvgError());
-    	SmartDashboard.putString("Arm Type", armAngle.getPIDSourceType().toString());
+    	SmartDashboard.putNumber("Arm Target", armController.getSetpoint());
     	
-    	SmartDashboard.putBoolean("Arm Enabled", armController.isEnabled());
-    	SmartDashboard.putNumber("Arm Staight V", armMotor.m_FullyExtededVoltage);
-    	SmartDashboard.putNumber("Arm SetPoint", armController.getSetpoint());
+    	SmartDashboard.putNumber("Arm Staight Volts", armController.fullyExtendedVoltage);
+    	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
+    	SmartDashboard.putNumber("Arm Home Angle", armController.homeVoltage);
     }
     
 }
