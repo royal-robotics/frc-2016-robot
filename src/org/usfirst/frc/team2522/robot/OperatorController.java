@@ -14,7 +14,7 @@ public final class OperatorController {
 		OperatorController.robot=robot;
 		OperatorController.controller=robot.operatorstick;
 		pickup();
-		armMotor();
+		//armMotor();
 		launch();
 		climber();
 	}
@@ -34,7 +34,7 @@ public final class OperatorController {
 	private static void armMotor(){
 		VictorSP armMotor=robot.armMotor;
 		if(controller.getRawButton(4)){
-			armMotor.set(.50);
+			armMotor.set(.40);
 		}
 		else if(controller.getRawButton(2)){
 			armMotor.set(-.15);

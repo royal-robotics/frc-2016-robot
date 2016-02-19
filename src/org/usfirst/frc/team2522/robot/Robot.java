@@ -38,14 +38,14 @@ public class Robot extends IterativeRobot {
 	VictorSP rightDrive;
 	VictorSP roller;
 	VictorSP climber;
-	VictorSP armMotor;
+	ArmMotor armMotor;
 	
 	CANTalon leftShooterWheel;
 	CANTalon rightShooterWheel;
 		
 	// Pot sensor //
 	AnalogInput armAngle;
-	PIDController armController;
+	ArmController armController;
 	
 	// Solenoids //
 	DoubleSolenoid shifter;
@@ -105,7 +105,6 @@ public class Robot extends IterativeRobot {
 		//Init motors
 		rightDrive = new VictorSP(5);
 		leftDrive = new VictorSP(1);
-		armMotor = new VictorSP(3);
 		roller = new VictorSP(7);
 		climber = new VictorSP(6);
 		
@@ -137,11 +136,9 @@ public class Robot extends IterativeRobot {
         
         // Init pot sensor //
         armAngle= new AnalogInput(0);
+		armMotor = new ArmMotor(3, armAngle,2.856);  
         
-        armController = new PIDController(100.0, 0.000, 0.0, armAngle, armMotor);
-        armController.setInputRange(2.267, 2.800);
-        armController.setOutputRange(-1.0, 1.0);
-        armController.setPercentTolerance(5.0);
+        armController = new ArmController(armMotor, armAngle);
         
         // Init gyro sensor //
 		mxp = new AHRS(SPI.Port.kMXP);
@@ -192,13 +189,14 @@ public class Robot extends IterativeRobot {
     		if (! armController.isEnabled())
     		{
     			armController.enable();    		
-        		armController.setSetpoint(2.325);	
+        		armController.setSetpoint(-10.0);	
     		}
     	}
     	else
     	{
     		if (armController.isEnabled()){
     			armController.disable();
+    			armMotor.set(0.0);
     		}
     	}
     	
@@ -245,17 +243,23 @@ public class Robot extends IterativeRobot {
     	SmartDashboard.putNumber("Right Encoder", rightDriveEncoder.getRaw());
     	SmartDashboard.putNumber("Left Encoder", leftDriveEncoder.getRaw());
 
-    	SmartDashboard.putNumber("Arm Angle", armAngle.getAverageVoltage());
     	
     	SmartDashboard.putNumber("Gyro", mxp.getAngle());
 
     	//SmartDashboard.putBoolean("LED1", dataOn);
     	//SmartDashboard.putBoolean("LED2", clockOn);
-    	
+
     	SmartDashboard.putNumber("Arm Motor", armMotor.get());
+    	
+    	SmartDashboard.putNumber("ArmAngle Volts", armAngle.getAverageVoltage());
+    	SmartDashboard.putNumber("ArmAngle Deg", (armAngle.getAverageVoltage() - armMotor.m_FullyExtededVoltage)  / ArmController.voltsPerdegree);
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
     	SmartDashboard.putNumber("Arm Error", armController.getAvgError());
     	SmartDashboard.putString("Arm Type", armAngle.getPIDSourceType().toString());
+    	
+    	SmartDashboard.putBoolean("Arm Enabled", armController.isEnabled());
+    	SmartDashboard.putNumber("Arm Staight V", armMotor.m_FullyExtededVoltage);
+    	SmartDashboard.putNumber("Arm SetPoint", armController.getSetpoint());
     }
     
 }
