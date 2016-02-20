@@ -136,4 +136,35 @@ public final class OperatorController
 		
 		// TODO: the climber lock needs to be tied to the dashboard timer also, so that it auto locks just before the match ends.
 	}
+	
+	public static void calibrateMotor(Robot robot) {
+		int motorPort = SmartDashboard.getNumber("Calibrate Motor");
+		VictorSP motor;
+		boolean valid = true;
+		
+		switch (motorPort) {
+		case 1:
+			motor = robot.leftDrive;
+			break;
+		case 3:
+			motor = robot.armMotor;
+			break;
+		case 5:
+			motor = robot.rightDrive;
+			break;
+		case 6:
+			motor = robot.climber;
+			break;
+		case 7:
+			motor = robot.roller;
+			break;
+		default:
+			valid = false;
+			break;
+		}
+		
+		if (valid) {
+			motor.set(robot.operatorstick.getRawAxis(2));
+		}
+	}
 }

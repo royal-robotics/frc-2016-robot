@@ -32,6 +32,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * 2016 FRC Robot
  */
 public class Robot extends IterativeRobot {
+	public final int CALIBRATE_MOTOR_BUTTON = 10;
+	
 	// Gyro / Accelerometer sensor //
 	AHRS mxp = new AHRS(SPI.Port.kMXP);
 
@@ -205,6 +207,12 @@ public class Robot extends IterativeRobot {
     		myDrive.tankDrive(leftstick, rightstick);
     	}    	
     	
+    	// If Motor Calibration button is held, activate calibration routine
+    	//
+    	if (operatorController.getRawButton(CALIBRATE_MOTOR_BUTTON)) {
+    		OperatorController.calibrateMotor(this);
+    	}
+    	
     	updateDashboard();
     }
 
@@ -273,6 +281,8 @@ public class Robot extends IterativeRobot {
     	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
     	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.voltsPerDegree);
+    	
+    	SmartDashboard.putNumber("Calibrate Motor", -1);
     }
     
 }
