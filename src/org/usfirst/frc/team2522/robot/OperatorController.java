@@ -187,11 +187,11 @@ public final class OperatorController
 	}
 	
 	public static void calibrateMotor(Robot robot) {
-		int motorPort = SmartDashboard.getNumber("Calibrate Motor");
+		double motorPort = SmartDashboard.getNumber("Calibrate Motor");
 		VictorSP motor;
 		boolean valid = true;
 		
-		switch (motorPort) {
+		switch ((int)motorPort) {
 		case 1:
 			motor = robot.leftDrive;
 			break;
