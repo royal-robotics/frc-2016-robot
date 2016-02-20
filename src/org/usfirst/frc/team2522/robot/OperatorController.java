@@ -32,16 +32,16 @@ public final class OperatorController
 	public static void operatePickup(Robot robot)
 	{
 		if(robot.operatorstick.getRawButton(pickupButton) && ! robot.operatorstick.getRawButton(shooterReadyButton)) {
-			robot.roller.set(.5);
+			robot.roller.set(-0.5);
 			robot.intake.set(DoubleSolenoid.Value.kForward);
-			robot.leftShooterWheel.set(-100.0);
-			robot.armController.setTargetAngle(-5);
+			robot.rightShooterWheel.set(0.4);
+			robot.armController.setTargetAngle(-15);
 			pickupButtonToggle = true;
 		}
 		else if (pickupButtonToggle) {
 			robot.roller.set(0);
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
-			robot.leftShooterWheel.set(0);
+			robot.rightShooterWheel.set(0);
 			pickupButtonToggle = false;
 		}
 	}
@@ -54,11 +54,11 @@ public final class OperatorController
 	public static void operateArm(Robot robot) {
 		
 		if(robot.operatorstick.getRawButton(armUpButton)){
-			robot.armController.setTargetAngle(robot.armController.getAngle() + 1.0);
+			robot.armController.setSetpoint(robot.armAngle.pidGet() + ArmController.voltsPerDegree * 20.0);
 			armMoveButtonToggle = true;
 		}
 		else if(robot.operatorstick.getRawButton(armDownButton)){
-			robot.armController.setTargetAngle(robot.armController.getAngle() - 1.0);
+			robot.armController.setSetpoint(robot.armAngle.pidGet() - ArmController.voltsPerDegree * 20.0);
 			armMoveButtonToggle = true;
 		}
 		else if (armMoveButtonToggle) {
@@ -80,7 +80,7 @@ public final class OperatorController
 		if(robot.operatorstick.getRawButton(shooterReadyButton)) {
 			if (!shooterReadyButtonToggle) {
 				shooterReadyButtonToggle = true;
-				robot.leftShooterWheel.set(1500.0);
+				robot.rightShooterWheel.set(-1.0);
 				robot.roller.set(0);
 				robot.intake.set(DoubleSolenoid.Value.kReverse);
 			}
@@ -94,7 +94,7 @@ public final class OperatorController
 		}
 		else if (shooterReadyButtonToggle) {
 			robot.kicker.set(DoubleSolenoid.Value.kReverse);
-			robot.leftShooterWheel.set(0);
+			robot.rightShooterWheel.set(0);
 			shooterReadyButtonToggle = false;
 		}
 	}

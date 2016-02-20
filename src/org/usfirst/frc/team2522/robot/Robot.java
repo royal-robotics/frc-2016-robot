@@ -90,7 +90,6 @@ public class Robot extends IterativeRobot {
         // Initialize Arm PID Controller
         armController = new ArmController(armAngle, armMotor);
         armController.setSetpoint(armAngle.pidGet());
-        armController.enable();
 
         // Initialize pneumatic solenoids in their default positions;
         shifter.set(DoubleSolenoid.Value.kReverse);
@@ -104,20 +103,20 @@ public class Robot extends IterativeRobot {
         climberEncoder.setDistancePerPulse(climberTranDistancePerPulse);
 
         // Initialize CAN Shooter Motor Controllers
-        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Speed);
-		leftShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
-		leftShooterWheel.reverseSensor(false);
-		leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
-		leftShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
-		leftShooterWheel.setProfile(0);
-		leftShooterWheel.setF(0.1);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
-		leftShooterWheel.setP(0);
-		leftShooterWheel.setI(0);
-		leftShooterWheel.setD(0);
+        rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
+        rightShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
+        rightShooterWheel.reverseSensor(true);
+        rightShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
+        rightShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
+        rightShooterWheel.setProfile(0);
+        rightShooterWheel.setF(0.1);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
+        rightShooterWheel.setP(0);
+        rightShooterWheel.setI(0);
+        rightShooterWheel.setD(0);
 		
-		rightShooterWheel.reverseSensor(true);
-		rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.Follower);
-		rightShooterWheel.set(leftShooterWheel.getDeviceID());	// This tells the right motor controller to follow the left one.
+		leftShooterWheel.reverseSensor(false);
+		leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Follower);
+		leftShooterWheel.set(rightShooterWheel.getDeviceID());	// This tells the right motor controller to follow the left one.
 
         
         // Initialize drive //
@@ -130,7 +129,9 @@ public class Robot extends IterativeRobot {
 	 */
 	public void autonomousInit()
 	{
-		mxp.reset(); 	// reset the gyro setting to zero before autonomous starts so that we have a fixed bearing.
+        armController.enable();
+        armController.setSetpoint(armAngle.pidGet());
+        mxp.reset(); 	// reset the gyro setting to zero before autonomous starts so that we have a fixed bearing.
 		
 		leftDriveEncoder.reset();	// reset encoder distances for start of autonomous.
 		rightDriveEncoder.reset(); 
@@ -149,7 +150,8 @@ public class Robot extends IterativeRobot {
      */
     public void teleopInit()
     {
-    
+        armController.enable();
+        armController.setSetpoint(armAngle.pidGet());
     }
     
     
@@ -159,9 +161,8 @@ public class Robot extends IterativeRobot {
     public void teleopPeriodic()
     {
     	if (shooterHome.get()) {
-    		armController.setHomeVoltage(armAngle.pidGet());
+//    		armController.setHomeVoltage(armAngle.pidGet());
     	}
-    	
     	
     	OperatorController.operateArm(this);
     	
@@ -212,6 +213,7 @@ public class Robot extends IterativeRobot {
      */
     public void disabledInit()
     {
+    	armController.disable();
     	updateDashboard();
     }
 
@@ -260,7 +262,7 @@ public class Robot extends IterativeRobot {
     	SmartDashboard.putNumber("RS Error", rightShooterWheel.getClosedLoopError());
     	
     	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
-    	SmartDashboard.putNumber("Arm Angle", (armAngle.pidGet() - armController.fullyExtendedVoltage) / ArmController.voltsPerDegree);
+    	SmartDashboard.putNumber("Arm Angle", armController.getAngle());
 
     	SmartDashboard.putNumber("Arm Motor", armMotor.get());
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
@@ -269,7 +271,8 @@ public class Robot extends IterativeRobot {
     	
     	SmartDashboard.putNumber("Arm Staight Volts", armController.fullyExtendedVoltage);
     	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
-    	SmartDashboard.putNumber("Arm Home Angle", armController.homeVoltage);
+    	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
+    	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.voltsPerDegree);
     }
     
 }
