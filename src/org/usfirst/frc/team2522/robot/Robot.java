@@ -2,25 +2,9 @@
 package org.usfirst.frc.team2522.robot;
 
 import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.wpilibj.CANTalon;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.AnalogTriggerOutput.AnalogTriggerType;
-import edu.wpi.first.wpilibj.DigitalOutput;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PIDController;
-import edu.wpi.first.wpilibj.PIDSourceType;
-import edu.wpi.first.wpilibj.RobotDrive;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.Talon;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.RobotDrive.MotorType;
+import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.vision.AxisCamera;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -84,6 +68,9 @@ public class Robot extends IterativeRobot {
 	boolean driveModeToggle = false;
 	boolean arcadeMode = false;
 	
+	//Camera
+	CameraServer camera;
+	
 	/**
 	 *	This function is called when the robot code is first launched 
 	 */
@@ -105,9 +92,20 @@ public class Robot extends IterativeRobot {
         climberEncoder.setDistancePerPulse(climberTranDistancePerPulse);
 
         // Initialize CAN Shooter Motor Controllers
+        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
+        leftShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
+        leftShooterWheel.reverseSensor(true);
+        leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
+        leftShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
+        leftShooterWheel.setProfile(0);
+        leftShooterWheel.setF(0.1);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
+        leftShooterWheel.setP(0);
+        leftShooterWheel.setI(0);
+        leftShooterWheel.setD(0);
+
         rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
         rightShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
-        rightShooterWheel.reverseSensor(true);
+        rightShooterWheel.reverseSensor(false);
         rightShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         rightShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         rightShooterWheel.setProfile(0);
@@ -116,14 +114,18 @@ public class Robot extends IterativeRobot {
         rightShooterWheel.setI(0);
         rightShooterWheel.setD(0);
 		
-		leftShooterWheel.reverseSensor(false);
-		leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Follower);
-		leftShooterWheel.set(rightShooterWheel.getDeviceID());	// This tells the right motor controller to follow the left one.
+        //leftShooterWheel.reverseSensor(false);
+		//leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Follower);
+		//leftShooterWheel.set(rightShooterWheel.getDeviceID());	// This tells the right motor controller to follow the left one.
 
         
         // Initialize drive //
     	myDrive = new RobotDrive(leftDrive, rightDrive);
         myDrive.setExpiration(0.1);
+        
+        // Initialize camera
+        camera = CameraServer.getInstance();
+        camera.startAutomaticCapture("cam0");
     }
 
 	/**

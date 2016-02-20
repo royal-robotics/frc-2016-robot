@@ -13,6 +13,7 @@ public final class OperatorController
 	public static final int climberRetractButton = 3;
 	public static final int armUpButton = 4;
 	public static final int pickupButton = 5;
+	public static final int spitoutButton = 7;
 	public static final int shooterReadyButton = 6;
 	public static final int shootButton = 8;
 	public static final int climberLockButton = 11;
@@ -20,7 +21,14 @@ public final class OperatorController
 	// Used to stop the arm after arm move buttons are no longer being pressed.
 	//
 	static boolean armMoveButtonToggle = false;
+	public enum PickupState {
+		OFF, PICKUP, SPITOUT
+	}
+	static PickupState sPickupState = PickupState.OFF;
+	static boolean pickupStateChange = true;
+	
 	static boolean pickupButtonToggle = false;
+	static boolean spitBallButtonToggle = false;
 	static boolean shooterReadyButtonToggle = false;
 	static boolean climberLockButtonToggle = false;
 		
@@ -31,9 +39,10 @@ public final class OperatorController
 	 */
 	public static void operatePickup(Robot robot)
 	{
-		if(robot.operatorstick.getRawButton(pickupButton) && ! robot.operatorstick.getRawButton(shooterReadyButton)) {
+		/*if(robot.operatorstick.getRawButton(pickupButton) && ! robot.operatorstick.getRawButton(shooterReadyButton)) {
 			robot.roller.set(-0.5);
 			robot.intake.set(DoubleSolenoid.Value.kForward);
+			robot.leftShooterWheel.set(-0.4);
 			robot.rightShooterWheel.set(0.4);
 			robot.armController.setTargetAngle(-15);
 			pickupButtonToggle = true;
@@ -41,8 +50,46 @@ public final class OperatorController
 		else if (pickupButtonToggle) {
 			robot.roller.set(0);
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
+			robot.leftShooterWheel.set(0);
 			robot.rightShooterWheel.set(0);
 			pickupButtonToggle = false;
+		}*/
+		
+		if(robot.operatorstick.getRawButton(pickupButton)
+				&& (sPickupState != PickupState.PICKUP)
+				&& !(robot.operatorstick.getRawButton(shooterReadyButton))) {
+			sPickupState = PickupState.PICKUP;
+			pickupStateChange = true;
+		} else if(robot.operatorstick.getRawButton(spitoutButton)
+				&& (sPickupState != PickupState.SPITOUT)
+				&& !(robot.operatorstick.getRawButton(shooterReadyButton))) {
+			sPickupState = PickupState.SPITOUT;
+			pickupStateChange = true;
+		} else if(sPickupState != PickupState.OFF) {
+			sPickupState = PickupState.OFF;
+			pickupStateChange = true;
+		}
+		
+		if(pickupStateChange) {
+			if(sPickupState == PickupState.PICKUP) {
+				robot.roller.set(-0.5);
+				robot.intake.set(DoubleSolenoid.Value.kForward);
+				robot.leftShooterWheel.set(-0.4);
+				robot.rightShooterWheel.set(0.4);
+				robot.armController.setTargetAngle(-15);
+			} else if(sPickupState == PickupState.SPITOUT) {
+				robot.roller.set(-0.5);
+				robot.intake.set(DoubleSolenoid.Value.kForward);
+				robot.leftShooterWheel.set(-0.4);
+				robot.rightShooterWheel.set(0.4);
+				robot.armController.setTargetAngle(-15);
+			} else {
+				robot.roller.set(0);
+				robot.intake.set(DoubleSolenoid.Value.kReverse);
+				robot.leftShooterWheel.set(0);
+				robot.rightShooterWheel.set(0);
+			}
+			pickupStateChange = false;
 		}
 	}
 	
@@ -80,6 +127,7 @@ public final class OperatorController
 		if(robot.operatorstick.getRawButton(shooterReadyButton)) {
 			if (!shooterReadyButtonToggle) {
 				shooterReadyButtonToggle = true;
+				robot.leftShooterWheel.set(1.0);
 				robot.rightShooterWheel.set(-1.0);
 				robot.roller.set(0);
 				robot.intake.set(DoubleSolenoid.Value.kReverse);
@@ -94,6 +142,7 @@ public final class OperatorController
 		}
 		else if (shooterReadyButtonToggle) {
 			robot.kicker.set(DoubleSolenoid.Value.kReverse);
+			robot.leftShooterWheel.set(0);
 			robot.rightShooterWheel.set(0);
 			shooterReadyButtonToggle = false;
 		}
