@@ -14,6 +14,7 @@ public final class OperatorController
 	public static final int armUpButton = 4;
 	public static final int pickupButton = 5;
 	public static final int spitoutButton = 7;
+	public static final int shooterPosButton = 9;
 	public static final int shooterReadyButton = 6;
 	public static final int shootButton = 8;
 	public static final int climberLockButton = 11;
@@ -21,14 +22,9 @@ public final class OperatorController
 	// Used to stop the arm after arm move buttons are no longer being pressed.
 	//
 	static boolean armMoveButtonToggle = false;
-	public enum PickupState {
-		OFF, PICKUP, SPITOUT
-	}
-	static PickupState sPickupState = PickupState.OFF;
-	static boolean pickupStateChange = true;
-	
 	static boolean pickupButtonToggle = false;
-	static boolean spitBallButtonToggle = false;
+	static boolean spitoutButtonToggle = false;
+	static boolean shooterPosButtonToggle = false;
 	static boolean shooterReadyButtonToggle = false;
 	static boolean climberLockButtonToggle = false;
 		
@@ -39,57 +35,47 @@ public final class OperatorController
 	 */
 	public static void operatePickup(Robot robot)
 	{
-		/*if(robot.operatorstick.getRawButton(pickupButton) && ! robot.operatorstick.getRawButton(shooterReadyButton)) {
-			robot.roller.set(-0.5);
+		if (robot.operatorstick.getPOV(0) == 0){
 			robot.intake.set(DoubleSolenoid.Value.kForward);
-			robot.leftShooterWheel.set(-0.4);
-			robot.rightShooterWheel.set(0.4);
-			robot.armController.setTargetAngle(-15);
-			pickupButtonToggle = true;
 		}
-		else if (pickupButtonToggle) {
-			robot.roller.set(0);
+		else if (robot.operatorstick.getPOV(0) == 180)
+		{
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
+		}
+		
+		if(robot.operatorstick.getRawButton(pickupButton) && ! robot.operatorstick.getRawButton(shooterReadyButton)) {
+			if (!pickupButtonToggle)
+			{
+				robot.roller.set(-0.5);
+				robot.intake.set(DoubleSolenoid.Value.kForward);
+				robot.leftShooterWheel.set(-0.4);
+				robot.rightShooterWheel.set(0.4);
+				robot.armController.setTargetAngle(-15.0);
+				pickupButtonToggle = true;
+			}
+		} else if(robot.operatorstick.getRawButton(spitoutButton) && ! robot.operatorstick.getRawButton(shooterReadyButton)) {
+			if (!spitoutButtonToggle) {
+				robot.roller.set(0.5);
+				robot.intake.set(DoubleSolenoid.Value.kReverse);
+				robot.leftShooterWheel.set(0.4);
+				robot.rightShooterWheel.set(-0.4);
+				robot.armController.setTargetAngle(-15);
+				spitoutButtonToggle = true;
+			}	
+		}
+		else if (pickupButtonToggle || spitoutButtonToggle) {
+			robot.roller.set(0);
+			
+			if(robot.leftstick.getRawButton(1)) {
+				robot.intake.set(DoubleSolenoid.Value.kForward);
+			} else {
+				robot.intake.set(DoubleSolenoid.Value.kReverse);
+			}
+			
 			robot.leftShooterWheel.set(0);
 			robot.rightShooterWheel.set(0);
 			pickupButtonToggle = false;
-		}*/
-		
-		if(robot.operatorstick.getRawButton(pickupButton)
-				&& (sPickupState != PickupState.PICKUP)
-				&& !(robot.operatorstick.getRawButton(shooterReadyButton))) {
-			sPickupState = PickupState.PICKUP;
-			pickupStateChange = true;
-		} else if(robot.operatorstick.getRawButton(spitoutButton)
-				&& (sPickupState != PickupState.SPITOUT)
-				&& !(robot.operatorstick.getRawButton(shooterReadyButton))) {
-			sPickupState = PickupState.SPITOUT;
-			pickupStateChange = true;
-		} else if(sPickupState != PickupState.OFF) {
-			sPickupState = PickupState.OFF;
-			pickupStateChange = true;
-		}
-		
-		if(pickupStateChange) {
-			if(sPickupState == PickupState.PICKUP) {
-				robot.roller.set(-0.5);
-				robot.intake.set(DoubleSolenoid.Value.kForward);
-				robot.leftShooterWheel.set(-0.4);
-				robot.rightShooterWheel.set(0.4);
-				robot.armController.setTargetAngle(-15);
-			} else if(sPickupState == PickupState.SPITOUT) {
-				robot.roller.set(-0.5);
-				robot.intake.set(DoubleSolenoid.Value.kForward);
-				robot.leftShooterWheel.set(-0.4);
-				robot.rightShooterWheel.set(0.4);
-				robot.armController.setTargetAngle(-15);
-			} else {
-				robot.roller.set(0);
-				robot.intake.set(DoubleSolenoid.Value.kReverse);
-				robot.leftShooterWheel.set(0);
-				robot.rightShooterWheel.set(0);
-			}
-			pickupStateChange = false;
+			spitoutButtonToggle = false;
 		}
 	}
 	
@@ -100,18 +86,24 @@ public final class OperatorController
 	 */
 	public static void operateArm(Robot robot) {
 		
+		if (robot.operatorstick.getRawButton(shooterPosButton)) {
+			if(!shooterPosButtonToggle) {
+				robot.armController.setTargetAngle(62.0);
+				shooterPosButtonToggle = true;	
+			}
+		}
+		else if (shooterPosButtonToggle) {
+			robot.armController.setSetpoint(robot.armAngle.pidGet());
+			shooterPosButtonToggle = false;
+		}
+		
 		if(robot.operatorstick.getRawButton(armUpButton)){
-			robot.armController.setSetpoint(robot.armAngle.pidGet() + ArmController.voltsPerDegree * 20.0);
+			robot.armController.setSetpoint(robot.armAngle.pidGet() + ArmController.voltsPerDegree * 35.0);
 			armMoveButtonToggle = true;
-		}
-		else if(robot.operatorstick.getRawButton(armDownButton)){
-			robot.armController.setSetpoint(robot.armAngle.pidGet() - ArmController.voltsPerDegree * 20.0);
+		} else if(robot.operatorstick.getRawButton(armDownButton)){
+			robot.armController.setSetpoint(robot.armAngle.pidGet() - ArmController.voltsPerDegree * 35.0);
 			armMoveButtonToggle = true;
-		}
-		else if (armMoveButtonToggle) {
-			// Only set the fixed target setpoint once after the move button has been released
-			// so that the error calculation is not continually reset.
-			//
+		} else if (armMoveButtonToggle) {
 			robot.armController.setSetpoint(robot.armAngle.pidGet());
 			armMoveButtonToggle = false;
 		}
@@ -188,7 +180,7 @@ public final class OperatorController
 	
 	public static void calibrateMotor(Robot robot) {
 		double motorPort = SmartDashboard.getNumber("Calibrate Motor");
-		VictorSP motor;
+		VictorSP motor = null;
 		boolean valid = true;
 		
 		switch ((int)motorPort) {
@@ -213,7 +205,7 @@ public final class OperatorController
 		}
 		
 		if (valid) {
-			motor.set(robot.operatorstick.getRawAxis(2));
+			motor.set(robot.operatorstick.getRawAxis(3));
 		}
 	}
 }

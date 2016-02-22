@@ -11,14 +11,24 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class ArmController extends PIDController
 {
-	public static final double homeAngle = 128.6;	// degrees
-	public static final double floorAngle = -46.0;	// degrees
-	public static final double pickupAngle = -6.0;	// degrees
-	public static final double voltsPerDegree = 0.0049227246;
-	public static final double radiansPerDegree = 3.1415 / 180.0;
+	// Practice Robot Values
+	//
+	//public static final double homeAngle = 128.6;	// degrees
+	//public static final double defaultHomeVoltage = 3.033; //Practice value
+	//public static final double voltsPerDegree = 0.0052063679; //Practice value
+
+	// Competition Robot Values
+	//
+	public static final double homeAngle = 130;	// degrees
+	public static final double defaultHomeVoltage = 2.900; //Competition value
+	public static final double voltsPerDegree = 0.0051444444; //Competition value
+
 	
+	public static final double floorAngle = -41.0;
+	public static final double pickupAngle = -6.0;	// degrees
+	public static final double radiansPerDegree = 3.1415 / 180.0;
 	public static final double minPower = 0.35;	// This is the approximate minimum motor power level needed to hold the arm at straight out at 0 degrees.
-	public static final double defaultHomeVoltage = 2.950;
+
 	
 	double homeVoltage = defaultHomeVoltage;
 	double floorVoltage = defaultHomeVoltage - ((homeAngle - floorAngle) * voltsPerDegree);
@@ -30,12 +40,12 @@ public class ArmController extends PIDController
 	public ArmController(PIDSource armSensor, PIDOutput armMotor)
 	{
 	//	super(2.0, 0.05, 0.0, armSensor, armMotor);
-		super(1.7, 0.005, 0.02, armSensor, armMotor);
+		super(2.0, 0.005, 0.02, armSensor, armMotor);
 		this.armMotor = armMotor;
 		this.armSensor = armSensor;
 		this.setOutputRange(-.65,  0.65);
 		this.setInputRange(this.floorVoltage, this.homeVoltage);
-		this.setPercentTolerance(0.5);
+		this.setPercentTolerance(.5);
 	}
 	
 	/**
@@ -106,15 +116,18 @@ public class ArmController extends PIDController
 	protected void calculate() {
 		super.calculate();
 		
-		if (this.armSensor == null || this.armMotor == null) {
-			return;
-		}
-		
-		double offset = 0.0;
-
-		offset = minPower * Math.cos(this.getAngle() * radiansPerDegree);
+		if (this.isEnabled())
+		{
+			if (this.armSensor == null || this.armMotor == null) {
+				return;
+			}
 			
-		this.armMotor.pidWrite(this.get() + offset);
+			double offset = 0.0;
+	
+			offset = minPower * Math.cos(this.getAngle() * radiansPerDegree);
+							
+			this.armMotor.pidWrite(this.get() + offset);
+		}
 	}
 
 }
