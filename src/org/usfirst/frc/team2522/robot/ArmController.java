@@ -13,15 +13,15 @@ public class ArmController extends PIDController
 {
 	// Practice Robot Values
 	//
-	//public static final double homeAngle = 128.6;	// degrees
-	//public static final double defaultHomeVoltage = 3.033; //Practice value
-	//public static final double voltsPerDegree = 0.0052063679; //Practice value
+	public static final double homeAngle = 118.4;	// degrees
+	public static final double defaultHomeVoltage = 3.557; //Practice value
+	public static final double voltsPerDegree = 0.005575495; //Practice value
 
 	// Competition Robot Values
 	//
-	public static final double homeAngle = 130;	// degrees
-	public static final double defaultHomeVoltage = 2.900; //Competition value
-	public static final double voltsPerDegree = 0.0051444444; //Competition value
+	//public static final double homeAngle = 118.9;	// degrees
+	//public static final double defaultHomeVoltage = 3.101; //Competition value
+	//public static final double voltsPerDegree = 0.0054478527; //Competition value
 
 	
 	public static final double floorAngle = -41.0;

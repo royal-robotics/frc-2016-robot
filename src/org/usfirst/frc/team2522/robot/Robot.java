@@ -325,7 +325,9 @@ public class Robot extends IterativeRobot {
     	}
     	
     	if(camera != null) {
-    		updateCamera();
+    		// Should onlyw do this when button pushed and it needs to
+    		// feed the watch dog during processing.
+    		//update
     	}
     	updateDashboard();
     }
