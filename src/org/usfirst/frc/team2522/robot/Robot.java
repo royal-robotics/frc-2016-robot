@@ -1,17 +1,16 @@
 
 package org.usfirst.frc.team2522.robot;
 
+import java.util.Comparator;
+import java.util.Vector;
+
 import com.kauailabs.navx.frc.AHRS;
 import com.ni.vision.NIVision;
-import com.ni.vision.NIVision.DrawMode;
-import com.ni.vision.NIVision.GeometricAdvancedSetupDataOption;
 import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
-import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.vision.AxisCamera;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -22,9 +21,28 @@ import edu.wpi.first.wpilibj.vision.AxisCamera;
  * 
  * 2016 FRC Robot
  */
-public class Robot extends IterativeRobot {
-	public final int CALIBRATE_MOTOR_BUTTON = 10;
-	
+public class Robot extends IterativeRobot
+{
+	//A structure to hold measurements of a particle
+	public class ParticleReport implements Comparator<ParticleReport>, Comparable<ParticleReport>{
+		double PercentAreaToImageArea;
+		double Area;
+		double BoundingRectLeft;
+		double BoundingRectTop;
+		double BoundingRectRight;
+		double BoundingRectBottom;
+		
+		public int compareTo(ParticleReport r)
+		{
+			return (int)(r.Area - this.Area);
+		}
+		
+		public int compare(ParticleReport r1, ParticleReport r2)
+		{
+			return (int)(r1.Area - r2.Area);
+		}
+	};
+
 	// Gyro / Accelerometer sensor //
 	AHRS mxp = new AHRS(SPI.Port.kMXP);
 
@@ -55,7 +73,8 @@ public class Robot extends IterativeRobot {
 	Encoder leftDriveEncoder = new Encoder(new DigitalInput(4), new DigitalInput(5));
 	Encoder climberEncoder = new Encoder(new DigitalInput(6), new DigitalInput (7));
 
-	DigitalInput shooterHome = new DigitalInput(8);	// limit switch	
+	DigitalInput shooterHome = new DigitalInput(8);	// limit switch	indicating arm home position
+	DigitalInput ballLoaded = new DigitalInput(9);  // limit switch indicating ball loaded.
 	
 	// Pneumatic Solenoids //
 	DoubleSolenoid shifter = new DoubleSolenoid(0,7);
@@ -76,18 +95,16 @@ public class Robot extends IterativeRobot {
 	boolean driveModeToggle = false;
 	boolean arcadeMode = false;
 	boolean shiftToggle = false;
-	boolean lowGear = true;
 	
 	//Camera
 	CameraServer camera;
-	int session;
+	int session = -1;
     Image frame;
 	Image binaryFrame;
 	int imaqError;
 	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(40, 75);
 	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(50, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(40, 75);
-	
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
@@ -101,7 +118,7 @@ public class Robot extends IterativeRobot {
         armController.setSetpoint(armAngle.pidGet());
 
         // Initialize pneumatic solenoids in their default positions;
-        shifter.set(DoubleSolenoid.Value.kReverse);
+        shifter.set(DoubleSolenoid.Value.kForward);	// low gear
         intake.set(DoubleSolenoid.Value.kReverse);
         kicker.set(DoubleSolenoid.Value.kReverse);
         climbLock.set(DoubleSolenoid.Value.kReverse);    
@@ -144,38 +161,47 @@ public class Robot extends IterativeRobot {
         
         // Initialize drive //
     	myDrive = new RobotDrive(leftDrive, rightDrive);
-        myDrive.setExpiration(0.1);
+        myDrive.setExpiration(0.5);	// this allows camera code enough time to execute between loops.
         
         // Initialize camera
-        //camera = CameraServer.getInstance();
-        //camera.startAutomaticCapture("cam0");
-        
-        // create images
-        frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
-		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
-		
-		//criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, AREA_MINIMUM, 100.0, 0, 0);
-
-        
-        // the camera name (ex "cam0") can be found through the roborio web interface
-        try {
-    		session = NIVision.IMAQdxOpenCamera("cam0",
-                    NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+        //
+        try
+        {
+            // The camera name (ex "cam0") can be found through the roborio web interface
+        	//
+        	// This is used for normal camera image updating to dashboard, but not used when doing image processing
+        	//
+            //camera = CameraServer.getInstance();
+            //camera.startAutomaticCapture("cam0");
+        	
+    		session = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
             NIVision.IMAQdxConfigureGrab(session);
             camera = CameraServer.getInstance();
-        } catch (Exception e) {
+            
+            // Create image objects
+            frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
+    		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
+    		
+    		// Setup image processing criteria
+    		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, 0.5, 100.0, 0, 0);
+        }
+        catch (Exception e)
+        {
         	System.out.println(e.toString());
         }
 
-        SmartDashboard.putInt("red low", REFLECTIVE_RED_RANGE.minValue);
-        SmartDashboard.putInt("red high", REFLECTIVE_RED_RANGE.maxValue);
-        SmartDashboard.putInt("green low", REFLECTIVE_GREEN_RANGE.minValue);
-        SmartDashboard.putInt("green high", REFLECTIVE_GREEN_RANGE.maxValue);
-        SmartDashboard.putInt("blue low", REFLECTIVE_BLUE_RANGE.minValue);
-        SmartDashboard.putInt("blue high", REFLECTIVE_BLUE_RANGE.maxValue);
+        SmartDashboard.putNumber("red low", REFLECTIVE_RED_RANGE.minValue);
+        SmartDashboard.putNumber("red high", REFLECTIVE_RED_RANGE.maxValue);
+        SmartDashboard.putNumber("green low", REFLECTIVE_GREEN_RANGE.minValue);
+        SmartDashboard.putNumber("green high", REFLECTIVE_GREEN_RANGE.maxValue);
+        SmartDashboard.putNumber("blue low", REFLECTIVE_BLUE_RANGE.minValue);
+        SmartDashboard.putNumber("blue high", REFLECTIVE_BLUE_RANGE.maxValue);
         
-   
+        // This value is used to calibrate motor controllers
+        // 
         SmartDashboard.putNumber("Calibrate Motor", -1);
+        
+        updateDashboard();
 	}
 
 	/**
@@ -183,69 +209,42 @@ public class Robot extends IterativeRobot {
 	 */
 	public void autonomousInit()
 	{
+        // reset the gyro setting to zero before autonomous starts so that we have a fixed bearing.
+        AutonomousController.driveResetBearing(this);
+        
+        // reset encoder distances for start of autonomous.
+        AutonomousController.driveResetEncoders(this);
+		
 		armController.enable();
         armController.setSetpoint(armAngle.pidGet());
-        mxp.reset(); 	// reset the gyro setting to zero before autonomous starts so that we have a fixed bearing.
+        
+		// we should start in low gear
+		shifter.set(DoubleSolenoid.Value.kForward);
 		
-        // reset encoder distances for start of autonomous.
-		leftDriveEncoder.reset();	
-		rightDriveEncoder.reset();
-		
-		/*roller.set(0.0);
+		// intake roller should be stopped and pulled back.
+		roller.set(0.0);
 		intake.set(DoubleSolenoid.Value.kReverse);
+		
+		// shooter wheels should not be moving
 		leftShooterWheel.set(0.0);
 		rightShooterWheel.set(0.0);
-		armController.setTargetAngle(128.6);*/
+		
+		// This is the last time getAutoMode() should be called during the autonomous phase.
+		AutonomousController.getAutoMode();
+		AutonomousController.autoStep = 0;
+		
+        updateDashboard();
 	}
 	
     /**
      * This function is called periodically during autonomous
      */
-	int autoCounter = 0;
-	boolean toggleArmAngle = false;
     public void autonomousPeriodic()
     {
-    	SmartDashboard.putInt("Auto Count", autoCounter);
-    	if(autoCounter == 0) {
-    		driveForward(30.0);
-    	} else if(autoCounter == 1) {
-    		if(!toggleArmAngle) {
-    			toggleArmAngle = true;
-    			armController.setTargetAngle(0.0);
-    		}
-    		waitArmValue(0.0);
-    	} else if(autoCounter == 2) {
-    		driveForward(30.0);
-    	}
+    	AutonomousController.RunAutonomous(this);
     	updateDashboard();
-
     }
-    private void driveForward (double distance) {
-    	if ((leftDriveEncoder.getDistance() < distance) ||  (-rightDriveEncoder.getDistance() < distance)) {
-    		if(Math.abs(leftDriveEncoder.getDistance() - -rightDriveEncoder.getDistance()) < 1.0) {
-    			leftDrive.set(-0.4);
-    			rightDrive.set(0.4);
-    		} else if(leftDriveEncoder.getDistance() > -rightDriveEncoder.getDistance()) {
-    			leftDrive.set(-0.35);
-    			rightDrive.set(0.4);
-    		} else {
-    			leftDrive.set(-0.4);
-    			rightDrive.set(0.35);
-    		}
-    	} else {
-    		leftDrive.set(0.0);
-    		rightDrive.set(0.0);
-    		leftDriveEncoder.reset();
-    		rightDriveEncoder.reset();
-    		autoCounter++;
-    	}
-	}
-    private void waitArmValue(double angle){
-    	if(Math.abs(armController.getAngle() - angle) < 5.0) {
-    		toggleArmAngle = false;
-    		autoCounter++;
-    	}
-    }
+    
     
     /**
 	 * This function is called at the beginning of the teleop period
@@ -254,6 +253,10 @@ public class Robot extends IterativeRobot {
     {
         armController.enable();
         armController.setSetpoint(armAngle.pidGet());
+
+        shifter.set(DoubleSolenoid.Value.kForward); // low gear
+
+        updateDashboard();
     }
     
     
@@ -262,10 +265,6 @@ public class Robot extends IterativeRobot {
      */
     public void teleopPeriodic()
     {
-    	if (shooterHome.get()) {
-//    		armController.setHomeVoltage(armAngle.pidGet());
-    	}
-    	
     	OperatorController.operateArm(this);
     	
     	OperatorController.operatePickup(this);
@@ -273,6 +272,8 @@ public class Robot extends IterativeRobot {
     	OperatorController.operateShooter(this);
     	
     	OperatorController.operateClimber(this);
+    	
+		OperatorController.calibrateMotor(this); // If Motor Calibration button is held, activate calibration routine
     	
     	
     	// Check for and toggle the drive mode from tank to arcade if button 3 on left stick is pressed.
@@ -287,26 +288,23 @@ public class Robot extends IterativeRobot {
     		driveModeToggle = false;
     	}
     	
-    	// Shift to high gear if either stick button 1 is pressed.
+    	// Toggle shifter if either stick button 1 is pressed.
     	//
     	if (rightstick.getRawButton(1) || (leftstick.getRawButton(1)))
     	{
-    		//shifter.set(DoubleSolenoid.Value.kForward);
     		if (!shiftToggle){
-    			lowGear = !lowGear;
+    			if (shifter.get() == DoubleSolenoid.Value.kForward) {
+    				shifter.set(DoubleSolenoid.Value.kReverse); // high gear
+    			}
+    			else {
+    				shifter.set(DoubleSolenoid.Value.kForward); // low gear
+    			}
     		}
-    	shiftToggle = true;
+    		shiftToggle = true;
     	}
     	else
     	{
-    		//shifter.set(DoubleSolenoid.Value.kReverse);
     		shiftToggle = false;
-    	}
-    	if (lowGear){
-    		shifter.set(DoubleSolenoid.Value.kForward);
-    	}
-    	else{
-    		shifter.set(DoubleSolenoid.Value.kReverse);
     	}
     	
     	// Drive the robot
@@ -318,17 +316,7 @@ public class Robot extends IterativeRobot {
     		myDrive.tankDrive(leftstick, rightstick);
     	}    	
     	
-    	// If Motor Calibration button is held, activate calibration routine
-    	//
-    	if (operatorstick.getRawButton(CALIBRATE_MOTOR_BUTTON)) {
-    		OperatorController.calibrateMotor(this);
-    	}
-    	
-    	if(camera != null) {
-    		// Should onlyw do this when button pushed and it needs to
-    		// feed the watch dog during processing.
-    		//update
-    	}
+		updateCamera();
     	updateDashboard();
     }
 
@@ -346,9 +334,10 @@ public class Robot extends IterativeRobot {
      */
     public void disabledPeriodic()
     {
-    	if(camera != null) {
-    		updateCamera();
-    	}
+    	// Cause the autonomous mode value to get updated from state of controllers.
+		AutonomousController.getAutoMode();
+
+    	updateCamera();
     	updateDashboard();
     }
     
@@ -358,6 +347,7 @@ public class Robot extends IterativeRobot {
      */
     public void testPeriodic()
     {
+		updateCamera();
     	updateDashboard();
     }
     
@@ -370,10 +360,14 @@ public class Robot extends IterativeRobot {
      */
     public void updateDashboard()
     {
-    	SmartDashboard.putNumber("Gyro", mxp.getAngle());
+    	SmartDashboard.putNumber("Gyro Angle", mxp.getAngle());
+    	SmartDashboard.putNumber("Compass Heading", mxp.getCompassHeading());
     	SmartDashboard.putNumber("Velocity f/s", mxp.getVelocityX() * 0.3048 /*(f/M)*/);
 
-    	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kReverse) ? "Low" : "High");
+    	SmartDashboard.putString("Auto Mode", AutonomousController.autoModeString);
+    	SmartDashboard.putNumber("Auto Step", AutonomousController.autoStep);
+    	
+    	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kForward) ? "Low" : "High");
     	SmartDashboard.putString("Drive Mode", arcadeMode ? "Arcade" : "Tank");
     	SmartDashboard.putNumber("LE Raw", leftDriveEncoder.getRaw());
     	SmartDashboard.putNumber("RE Raw", rightDriveEncoder.getRaw());
@@ -390,6 +384,7 @@ public class Robot extends IterativeRobot {
     	
     	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
     	SmartDashboard.putNumber("Arm Angle", armController.getAngle());
+    	SmartDashboard.putBoolean("Arm Home", shooterHome.get());
 
     	SmartDashboard.putNumber("Arm Motor", armMotor.get());
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
@@ -399,29 +394,75 @@ public class Robot extends IterativeRobot {
     	SmartDashboard.putNumber("Arm Staight Volts", armController.fullyExtendedVoltage);
     	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
-    	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.voltsPerDegree);
+    	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
+    	
+    	SmartDashboard.putBoolean("Ball Loaded", ballLoaded.get());
     	
     	SmartDashboard.putNumber("Calibrate Speed", operatorstick.getRawAxis(3));
     }
     
-    public void updateCamera() {
-    	NIVision.IMAQdxGrab(session, frame, 1);
-        /*NIVision.imaqDrawShapeOnImage(frame, frame, rect,
-                DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);*/
-        //NIVision.ParticleFilterCriteria2
-    	
-    	NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.RGB, REFLECTIVE_RED_RANGE, REFLECTIVE_GREEN_RANGE, REFLECTIVE_BLUE_RANGE);
-    	int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
-    	
-    	REFLECTIVE_RED_RANGE = new NIVision.Range(SmartDashboard.getInt("red low"), SmartDashboard.getInt("red high"));
-    	REFLECTIVE_GREEN_RANGE = new NIVision.Range(SmartDashboard.getInt("green low"), SmartDashboard.getInt("green high"));
-    	REFLECTIVE_BLUE_RANGE = new NIVision.Range(SmartDashboard.getInt("blue low"), SmartDashboard.getInt("blue high"));
-    	    	
-    	if(operatorstick.getPOV(0) == 270) {
-            camera.setImage(binaryFrame);
-    	} else {
-            camera.setImage(frame);
+    public void updateCamera()
+    {
+    	if (camera != null)
+    	{
+	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
+	    	
+    		if (operatorstick.getPOV(0) == 270) {
+		    	REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
+		    	REFLECTIVE_GREEN_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("green low"), (int)SmartDashboard.getNumber("green high"));
+		    	REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));
+		    	
+		    	NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.RGB, REFLECTIVE_RED_RANGE, REFLECTIVE_GREEN_RANGE, REFLECTIVE_BLUE_RANGE);
+
+		    	camera.setImage(binaryFrame);
+
+		    	//filter out small particles
+				float areaMin = (float)SmartDashboard.getNumber("Area min %", 0.5);
+				criteria[0].lower = areaMin;
+				imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
+				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
+				SmartDashboard.putNumber("Masked particles", numParticles);
+
+				if(numParticles > 0)
+				{
+					//Measure particles and sort by particle size
+					Vector<ParticleReport> particles = new Vector<ParticleReport>();
+					for(int particleIndex = 0; particleIndex < numParticles; particleIndex++)
+					{
+						ParticleReport par = new ParticleReport();
+						par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
+						par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
+						par.BoundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
+						par.BoundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
+						par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
+						par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
+						particles.add(par);
+					}
+					particles.sort(null);
+
+					//This example only scores the largest particle. Extending to score all particles and choosing the desired one is left as an exercise
+					//for the reader. Note that this scores and reports information about a single particle (single L shaped target). To get accurate information 
+					//about the location of the tote (not just the distance) you will need to correlate two adjacent targets in order to find the true center of the tote.
+					//scores.Aspect = AspectScore(particles.elementAt(0));
+					//SmartDashboard.putNumber("Aspect", scores.Aspect);
+					//scores.Area = AreaScore(particles.elementAt(0));
+					//SmartDashboard.putNumber("Area", scores.Area);
+					//boolean isTote = scores.Aspect > SCORE_MIN && scores.Area > SCORE_MIN;
+
+					//Send distance and tote status to dashboard. The bounding rect, particularly the horizontal center (left - right) may be useful for rotating/driving towards a tote
+					//SmartDashboard.putBoolean("IsTote", isTote);
+					//SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.elementAt(0)));
+				} else {
+					SmartDashboard.putBoolean("IsTote", false);
+				}
+				
+		    	camera.setImage(binaryFrame);
+			}
+    		else {
+		    	//NIVision.Rect rect = new NIVision.Rect(10, 10, 100, 100);
+		        /*NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);*/
+	            camera.setImage(frame);
+    		}
     	}
-        
     }
 }

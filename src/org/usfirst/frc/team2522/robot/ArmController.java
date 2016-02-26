@@ -1,49 +1,44 @@
 package org.usfirst.frc.team2522.robot;
 
 import edu.wpi.first.wpilibj.PIDController;
-import edu.wpi.first.wpilibj.PIDInterface;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
-import edu.wpi.first.wpilibj.PIDSourceType;
-import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 public class ArmController extends PIDController
 {
 	// Practice Robot Values
 	//
-	public static final double homeAngle = 118.4;	// degrees
-	public static final double defaultHomeVoltage = 3.557; //Practice value
-	public static final double voltsPerDegree = 0.005575495; //Practice value
+	public static final double HOME_ANGLE = 118.4;	// degrees
+	public static final double HOME_DEFAULT_VOLTAGE = 3.557; //Practice value
+	public static final double VOLTS_PER_DEGREE = 0.005575495; //Practice value
 
 	// Competition Robot Values
 	//
-	//public static final double homeAngle = 118.9;	// degrees
-	//public static final double defaultHomeVoltage = 3.101; //Competition value
-	//public static final double voltsPerDegree = 0.0054478527; //Competition value
+	//public static final double HOME_ANGLE = 118.9;	// degrees
+	//public static final double HOME_DEFAULT_VOLTAGE = 3.101; //Competition value
+	//public static final double VOLTS_PER_DEGREE = 0.0054478527; //Competition value
 
 	
-	public static final double floorAngle = -41.0;
-	public static final double pickupAngle = -6.0;	// degrees
-	public static final double radiansPerDegree = 3.1415 / 180.0;
-	public static final double minPower = 0.35;	// This is the approximate minimum motor power level needed to hold the arm at straight out at 0 degrees.
+	public static final double FLOOR_ANGLE = -41.0;
+	public static final double RAIDIANS_PER_DEGREE = 3.1415 / 180.0;
+	public static final double MIN_POWER = 0.35;	// This is the approximate minimum motor power level needed to hold the arm at straight out at 0 degrees.
 
 	
-	double homeVoltage = defaultHomeVoltage;
-	double floorVoltage = defaultHomeVoltage - ((homeAngle - floorAngle) * voltsPerDegree);
-	double fullyExtendedVoltage = defaultHomeVoltage - (homeAngle * voltsPerDegree);
+	double homeVoltage = HOME_DEFAULT_VOLTAGE;
+	double floorVoltage = HOME_DEFAULT_VOLTAGE - ((HOME_ANGLE - FLOOR_ANGLE) * VOLTS_PER_DEGREE);
+	double fullyExtendedVoltage = HOME_DEFAULT_VOLTAGE - (HOME_ANGLE * VOLTS_PER_DEGREE);
 	
 	PIDOutput armMotor;
 	PIDSource armSensor;
 	
 	public ArmController(PIDSource armSensor, PIDOutput armMotor)
 	{
-	//	super(2.0, 0.05, 0.0, armSensor, armMotor);
+//		super(2.0, 0.005, 0.02, armSensor, armMotor);
 		super(2.0, 0.005, 0.02, armSensor, armMotor);
 		this.armMotor = armMotor;
 		this.armSensor = armSensor;
-		this.setOutputRange(-.65,  0.65);
+		this.setOutputRange(-1 + MIN_POWER,  1.0 - MIN_POWER);
 		this.setInputRange(this.floorVoltage, this.homeVoltage);
 		this.setPercentTolerance(.5);
 	}
@@ -56,8 +51,8 @@ public class ArmController extends PIDController
 	public void setHomeVoltage(double voltage)
 	{
 		this.homeVoltage = voltage;
-		this.floorVoltage = this.homeVoltage - ((homeAngle - floorAngle) * voltsPerDegree);
-		this.fullyExtendedVoltage = this.homeVoltage - (homeAngle * voltsPerDegree);
+		this.floorVoltage = this.homeVoltage - ((HOME_ANGLE - FLOOR_ANGLE) * VOLTS_PER_DEGREE);
+		this.fullyExtendedVoltage = this.homeVoltage - (HOME_ANGLE * VOLTS_PER_DEGREE);
 		this.setInputRange(this.floorVoltage, this.homeVoltage);
 	}
 	
@@ -69,7 +64,7 @@ public class ArmController extends PIDController
 	 */
 	public  void setTargetAngle(double degrees)
 	{
-		this.setSetpoint(this.fullyExtendedVoltage + (degrees * voltsPerDegree));
+		this.setSetpoint(this.fullyExtendedVoltage + (degrees * VOLTS_PER_DEGREE));
 	}
 	
 	/**
@@ -79,7 +74,7 @@ public class ArmController extends PIDController
 	 */
 	public  double getTargetAngle()
 	{
-		return (this.getSetpoint() - this.fullyExtendedVoltage) / voltsPerDegree;
+		return (this.getSetpoint() - this.fullyExtendedVoltage) / VOLTS_PER_DEGREE;
 	}
 
 	/**
@@ -90,7 +85,7 @@ public class ArmController extends PIDController
 	 */
 	public double getAngle()
 	{
-		return (this.armSensor.pidGet() - this.fullyExtendedVoltage) / voltsPerDegree;
+		return (this.armSensor.pidGet() - this.fullyExtendedVoltage) / VOLTS_PER_DEGREE;
 	}
 	
 	/**
@@ -124,7 +119,7 @@ public class ArmController extends PIDController
 			
 			double offset = 0.0;
 	
-			offset = minPower * Math.cos(this.getAngle() * radiansPerDegree);
+			offset = MIN_POWER * Math.cos(this.getAngle() * RAIDIANS_PER_DEGREE);
 							
 			this.armMotor.pidWrite(this.get() + offset);
 		}
