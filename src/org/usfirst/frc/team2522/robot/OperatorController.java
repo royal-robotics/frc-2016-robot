@@ -6,21 +6,22 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public final class OperatorController
 {
-	public static final int CLIMBER_DEPLOY_BUTTON = 1;
+	public static final int CLIMBER_DEPLOY_BUTTON = 3;
 	public static final int ARM_DOWN_BUTTON = 2;
-	public static final int CLIMBER_RETRACT_BUTTON = 3;
+	public static final int CLIMBER_RETRACT_BUTTON = 1;
 	public static final int ARM_UP_BUTTON = 4;
 	public static final int PICKUP_BUTTON = 5;
 	public static final int SPITOUT_BUTTON = 7;
 	public static final int SHOOTER_POS_BUTTON = 9;
 	public static final int SHOOTER_READY_BUTTON = 6;
 	public static final int SHOOT_BUTTON = 8;
-	public static final int CALIBRATE_MOTOR_BUTTON = 10;
+	//public static final int CALIBRATE_MOTOR_BUTTON = 10;
+	public static final int REVERSE_SHOOTER_BUTTON = 10;
 	public static final int CLIMBER_LOCK_BUTTON = 11;
 
 	// Arm Angles used by various functions
 	public static final double PICKUP_ANGLE = -15.0;		// degrees
-	public static final double OUTERWORKS_SHOT_ANGLE = 62.0;
+	public static final double OUTERWORKS_SHOT_ANGLE = 58.0;
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -15.0;	// degrees
 	
 	// Used to stop the arm after arm move buttons are no longer being pressed.
@@ -40,6 +41,11 @@ public final class OperatorController
 	 */
 	public static void operatePickup(Robot robot)
 	{
+		if (!robot.ballLoadedSwitch.get())
+		{
+			robot.ballLoaded = true;	
+		}
+		
 		if ((robot.operatorstick.getPOV(0) == 0) || (robot.leftstick.getRawButton(1))){
 			robot.intake.set(DoubleSolenoid.Value.kForward);
 		}
@@ -68,8 +74,8 @@ public final class OperatorController
 			{
 				robot.roller.set(-0.5);
 				robot.intake.set(DoubleSolenoid.Value.kForward);
-				robot.leftShooterWheel.set(-0.4);
-				robot.rightShooterWheel.set(0.4);
+				robot.leftShooterWheel.set(-.45);
+				robot.rightShooterWheel.set(0.45);
 				robot.armController.setTargetAngle(PICKUP_ANGLE);
 				pickupButtonToggle = true;
 			}
@@ -77,8 +83,8 @@ public final class OperatorController
 			if (!spitoutButtonToggle) {
 				robot.roller.set(0.5);
 				robot.intake.set(DoubleSolenoid.Value.kReverse);
-				robot.leftShooterWheel.set(0.4);
-				robot.rightShooterWheel.set(-0.4);
+				robot.leftShooterWheel.set(0.45);
+				robot.rightShooterWheel.set(-0.45);
 				robot.armController.setTargetAngle(PICKUP_ANGLE);
 				spitoutButtonToggle = true;
 			}	
@@ -100,13 +106,13 @@ public final class OperatorController
 	 */
 	public static void operateArm(Robot robot) {
 		
-    	if (robot.shooterHome.get()) {
-    		robot.armController.setHomeVoltage(robot.armAngle.pidGet());
+    	if (!robot.shooterHomeSwitch.get()) {
+    		//robot.armController.setHomeVoltage(robot.armAngle.pidGet());
     	}
     	
 		if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON)) {
 			if(!shooterPosButtonToggle) {
-				robot.armController.setTargetAngle(62.0);
+				robot.armController.setTargetAngle(56.0);
 				shooterPosButtonToggle = true;	
 			}
 		}
@@ -134,20 +140,27 @@ public final class OperatorController
 	 */
 	public static void operateShooter(Robot robot)
 	{
-		if(robot.operatorstick.getRawButton(SHOOTER_READY_BUTTON)) {
-			if (!shooterReadyButtonToggle) {
-				shooterReadyButtonToggle = true;
-				robot.leftShooterWheel.set(1.0);
-				robot.rightShooterWheel.set(-1.0);
-				robot.roller.set(0);
-				robot.intake.set(DoubleSolenoid.Value.kReverse);
-			}
-			
+		if(robot.operatorstick.getRawButton(SHOOTER_READY_BUTTON) || robot.operatorstick.getRawButton(REVERSE_SHOOTER_BUTTON)) {
 			if (robot.operatorstick.getRawButton(SHOOT_BUTTON)) {
 				robot.kicker.set(DoubleSolenoid.Value.kForward);
+				robot.ballLoaded = false;
 			}
 			else {
 				robot.kicker.set(DoubleSolenoid.Value.kReverse);
+			}
+
+			if (!shooterReadyButtonToggle)
+			{
+				shooterReadyButtonToggle = true;
+				robot.roller.set(0);
+				if(robot.operatorstick.getRawButton(REVERSE_SHOOTER_BUTTON)) {
+					robot.leftShooterWheel.set(0.55);
+					robot.rightShooterWheel.set(-0.55);
+				}
+				else {
+					robot.leftShooterWheel.set(1.0);
+					robot.rightShooterWheel.set(-1.0);
+				}
 			}
 		}
 		else if (shooterReadyButtonToggle) {
@@ -169,27 +182,30 @@ public final class OperatorController
 		//
 		if (robot.climbLock.get() != DoubleSolenoid.Value.kForward) {
 			if(robot.operatorstick.getRawButton(CLIMBER_DEPLOY_BUTTON)){
-				robot.climber.set(-0.3);
+				robot.climber.set(-1.0);
 			}
 			else if(robot.operatorstick.getRawButton(CLIMBER_RETRACT_BUTTON)){
-				robot.climber.set(0.3);
+				robot.climber.set(1.0);
 			}
 			else{
 				robot.climber.set(0);
 			}
 		}
 		
-		if (robot.operatorstick.getRawButton(CLIMBER_LOCK_BUTTON) && ! climberLockButtonToggle) {
-			climberLockButtonToggle = true;
-			if (robot.climbLock.get() == DoubleSolenoid.Value.kReverse) {
-				robot.climbLock.set(DoubleSolenoid.Value.kForward);
-				robot.climber.set(0);
-			}
-			else {
-				robot.climbLock.set(DoubleSolenoid.Value.kReverse);
+		if (robot.operatorstick.getPOV(0) == 90) {
+			if (!climberLockButtonToggle)
+			{
+				climberLockButtonToggle = true;
+				if (robot.climbLock.get() == DoubleSolenoid.Value.kReverse) {
+					robot.climbLock.set(DoubleSolenoid.Value.kForward);
+					robot.climber.set(0);
+				}
+				else {
+					robot.climbLock.set(DoubleSolenoid.Value.kReverse);
+				}
 			}
 		}
-		else if (! robot.operatorstick.getRawButton(CLIMBER_LOCK_BUTTON)) {
+		else if (robot.operatorstick.getPOV(0) != 90) {
 			climberLockButtonToggle = false;
 		}
 		
@@ -198,6 +214,7 @@ public final class OperatorController
 	
 	public static void calibrateMotor(Robot robot)
 	{
+		/*
     	if (robot.operatorstick.getRawButton(CALIBRATE_MOTOR_BUTTON))
     	{
 			double motorPort = SmartDashboard.getNumber("Calibrate Motor");
@@ -230,5 +247,6 @@ public final class OperatorController
 				motor.set(robot.operatorstick.getRawAxis(3));
 			}
     	}
+    	*/
 	}
 }

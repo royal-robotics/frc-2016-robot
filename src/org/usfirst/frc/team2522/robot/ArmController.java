@@ -35,12 +35,13 @@ public class ArmController extends PIDController
 	public ArmController(PIDSource armSensor, PIDOutput armMotor)
 	{
 //		super(2.0, 0.005, 0.02, armSensor, armMotor);
-		super(2.0, 0.005, 0.02, armSensor, armMotor);
+		super(1.5, 0.04, 0.02, armSensor, armMotor);
+		//super(1.00, 0.1, 0.05, armSensor, armMotor);
 		this.armMotor = armMotor;
 		this.armSensor = armSensor;
 		this.setOutputRange(-1 + MIN_POWER,  1.0 - MIN_POWER);
 		this.setInputRange(this.floorVoltage, this.homeVoltage);
-		this.setPercentTolerance(.5);
+		this.setPercentTolerance(50.0);
 	}
 	
 	/**

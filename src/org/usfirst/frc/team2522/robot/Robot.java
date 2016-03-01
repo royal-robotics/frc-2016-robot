@@ -73,8 +73,8 @@ public class Robot extends IterativeRobot
 	Encoder leftDriveEncoder = new Encoder(new DigitalInput(4), new DigitalInput(5));
 	Encoder climberEncoder = new Encoder(new DigitalInput(6), new DigitalInput (7));
 
-	DigitalInput shooterHome = new DigitalInput(8);	// limit switch	indicating arm home position
-	DigitalInput ballLoaded = new DigitalInput(9);  // limit switch indicating ball loaded.
+	DigitalInput shooterHomeSwitch = new DigitalInput(8);	// limit switch	indicating arm home position
+	DigitalInput ballLoadedSwitch = new DigitalInput(9);  // limit switch indicating ball loaded.
 	
 	// Pneumatic Solenoids //
 	DoubleSolenoid shifter = new DoubleSolenoid(0,7);
@@ -89,12 +89,14 @@ public class Robot extends IterativeRobot
 	
 	// PID Controllers
 	ArmController armController;
+	boolean ballLoaded = false;
 	
 	// Drive //
 	RobotDrive myDrive;
 	boolean driveModeToggle = false;
 	boolean arcadeMode = false;
 	boolean shiftToggle = false;
+	boolean driveStraightToggle = false;
 	
 	//Camera
 	CameraServer camera;
@@ -102,9 +104,9 @@ public class Robot extends IterativeRobot
     Image frame;
 	Image binaryFrame;
 	int imaqError;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(40, 75);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(50, 255);
-	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(40, 75);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(20, 70);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(75, 255);
+	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(20, 90);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
@@ -122,13 +124,13 @@ public class Robot extends IterativeRobot
         intake.set(DoubleSolenoid.Value.kReverse);
         kicker.set(DoubleSolenoid.Value.kReverse);
         climbLock.set(DoubleSolenoid.Value.kReverse);    
-    	
+
         // Initialize Encoder Distances
         leftDriveEncoder.reset();
         rightDriveEncoder.reset();
         climberEncoder.reset();
         leftDriveEncoder.setDistancePerPulse(driveTranDistancePerPulse);
-        rightDriveEncoder.setDistancePerPulse(driveTranDistancePerPulse);
+        rightDriveEncoder.setDistancePerPulse(-driveTranDistancePerPulse);
         climberEncoder.setDistancePerPulse(climberTranDistancePerPulse);
 
         // Initialize CAN Shooter Motor Controllers
@@ -171,10 +173,10 @@ public class Robot extends IterativeRobot
         	//
         	// This is used for normal camera image updating to dashboard, but not used when doing image processing
         	//
-            //camera = CameraServer.getInstance();
             //camera.startAutomaticCapture("cam0");
+            //camera = CameraServer.getInstance();
         	
-    		session = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+    		session = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
             NIVision.IMAQdxConfigureGrab(session);
             camera = CameraServer.getInstance();
             
@@ -230,8 +232,10 @@ public class Robot extends IterativeRobot
 		rightShooterWheel.set(0.0);
 		
 		// This is the last time getAutoMode() should be called during the autonomous phase.
-		AutonomousController.getAutoMode();
+		AutonomousController.getAutoMode(this);
 		AutonomousController.autoStep = 0;
+		
+		ballLoaded = true;	// we always start autonomous with a ball loaded.
 		
         updateDashboard();
 	}
@@ -255,6 +259,10 @@ public class Robot extends IterativeRobot
         armController.setSetpoint(armAngle.pidGet());
 
         shifter.set(DoubleSolenoid.Value.kForward); // low gear
+        
+        leftShooterWheel.set(0.0);
+        rightShooterWheel.set(0.0);
+		kicker.set(DoubleSolenoid.Value.kReverse);
 
         updateDashboard();
     }
@@ -309,12 +317,26 @@ public class Robot extends IterativeRobot
     	
     	// Drive the robot
     	//
-    	if (arcadeMode) {
-    		myDrive.arcadeDrive(leftstick);
+    	if (rightstick.getRawButton(4))
+    	{
+    		if (!driveStraightToggle)
+    		{
+    			AutonomousController.driveResetBearing(this);
+    			driveStraightToggle = true;
+    		}
+    		AutonomousController.driveResetEncoders(this);
+    		AutonomousController.driveForward(this, 0, 0.80, 15.0);
     	}
-    	else {
-    		myDrive.tankDrive(leftstick, rightstick);
-    	}    	
+    	else
+    	{
+			driveStraightToggle = false;
+	    	if (arcadeMode) {
+	    		myDrive.arcadeDrive(leftstick);
+	    	}
+	    	else {
+	    		myDrive.tankDrive(leftstick, rightstick, true);
+	    	}
+    	}
     	
 		updateCamera();
     	updateDashboard();
@@ -335,7 +357,7 @@ public class Robot extends IterativeRobot
     public void disabledPeriodic()
     {
     	// Cause the autonomous mode value to get updated from state of controllers.
-		AutonomousController.getAutoMode();
+		AutonomousController.getAutoMode(this);
 
     	updateCamera();
     	updateDashboard();
@@ -384,19 +406,21 @@ public class Robot extends IterativeRobot
     	
     	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
     	SmartDashboard.putNumber("Arm Angle", armController.getAngle());
-    	SmartDashboard.putBoolean("Arm Home", shooterHome.get());
+    	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
 
     	SmartDashboard.putNumber("Arm Motor", armMotor.get());
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
     	SmartDashboard.putNumber("Arm Error", armController.getAvgError());
     	SmartDashboard.putNumber("Arm Target", armController.getSetpoint());
+    	SmartDashboard.putBoolean("Arm On Target", armController.onTarget());
     	
     	SmartDashboard.putNumber("Arm Staight Volts", armController.fullyExtendedVoltage);
     	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
     	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
     	
-    	SmartDashboard.putBoolean("Ball Loaded", ballLoaded.get());
+    	SmartDashboard.putBoolean("Ball Loaded", ballLoaded);
+    	SmartDashboard.putBoolean("Ball Load Switch", ballLoadedSwitch.get());
     	
     	SmartDashboard.putNumber("Calibrate Speed", operatorstick.getRawAxis(3));
     }
@@ -452,11 +476,9 @@ public class Robot extends IterativeRobot
 					//Send distance and tote status to dashboard. The bounding rect, particularly the horizontal center (left - right) may be useful for rotating/driving towards a tote
 					//SmartDashboard.putBoolean("IsTote", isTote);
 					//SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.elementAt(0)));
-				} else {
-					SmartDashboard.putBoolean("IsTote", false);
 				}
 				
-		    	camera.setImage(binaryFrame);
+		    	//camera.setImage(binaryFrame);
 			}
     		else {
 		    	//NIVision.Rect rect = new NIVision.Rect(10, 10, 100, 100);

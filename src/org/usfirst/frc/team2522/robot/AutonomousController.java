@@ -1,22 +1,41 @@
 package org.usfirst.frc.team2522.robot;
 
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+
 public final class AutonomousController
 {
 	static String autoModeString = "LowBarAndShoot";
 	static int autoMode = 0;
 	static int autoStep = 0;
 	
-	
 	/***
 	 * Return whatever automode is set from the river station during setup.
 	 * 
 	 * @return
 	 */
-	public static int getAutoMode()
+	public static int getAutoMode(Robot robot)
 	{
-		autoMode = 0;  // should read this from the control system.
-		autoModeString = "LowBarAndShoot";
-		
+		if (robot.leftstick.getZ() > 0.5)
+		{
+			autoMode = 0;
+			autoModeString = "DoNothing";
+		}
+		else if  ((robot.leftstick.getZ() <= 0.5) && (robot.leftstick.getZ() > 0.0))
+		{
+			autoMode = 1;
+			autoModeString = "DriveForward";
+		}
+		else if  ((robot.leftstick.getZ() <= 0.0) && (robot.leftstick.getZ() > -0.5))
+		{
+			autoMode = 2;
+			autoModeString = "LowBarNoShot";
+		}
+		else
+		{
+			autoMode = 3;
+			autoModeString = "LowBarAndShoot";
+		}
+
 		return autoMode;
 	}
 	
@@ -24,7 +43,13 @@ public final class AutonomousController
 	{
 		switch(autoMode)
 		{
-			case 0:
+			case 1:
+				DriveForwardAuto(robot);
+				break;
+			case 2:
+				LowBarNoShotAuto(robot);
+				break;
+			case 3:
 				LowBarAndShootAuto(robot);
 				break;
 			default:
@@ -33,42 +58,54 @@ public final class AutonomousController
 		}
 	}
 	
-	public static void LowBarAndShootAuto(Robot robot)
+	/***
+	 * 
+	 * @param robot
+	 */
+	public static void DriveForwardAuto(Robot robot)
 	{
 		switch(autoStep)
 		{
 			case 0:
-				if (armMove(robot, -15.0))
+				if (driveForward(robot, 0.0, 0.80, 185.0))
 				{
 					autoStep++;
 				}
 				break;
+			default:
+				driveStop(robot);
+				break;			
+		}
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 */
+	public static void LowBarNoShotAuto(Robot robot)
+	{
+		switch(autoStep)
+		{
+			case 0:
+			{
+				if (robot.leftDriveEncoder.getDistance() < 96.0)
+				{
+					armMove(robot, -15.0);
+				}
+				else
+				{
+					armMove(robot, ArmController.HOME_ANGLE);
+				}
+
+				if (driveForward(robot, 0.0, 0.75, 245.0))
+				{
+					autoStep++;
+				}
+			
+				break;
+			}
 			case 1:
-				if (driveForward(robot, 0.0, 60.0))
-				{
-					autoStep++;
-				}
-				break;
-			case 2:
-				if (drivePivot(robot, 45.0))
-				{
-					autoStep++;
-				}
-				break;
-			case 3:
-				if (armMove(robot, 65.0))
-				{
-					autoStep++;
-				}
-				break;
-			case 4:
-				if (shootBall(robot))
-				{
-					autoStep++;
-				}
-				break;
-			case 5:
-				if (armMove(robot, ArmController.HOME_ANGLE))
+				if (drivePivot(robot, 65.0, 0.65))
 				{
 					autoStep++;
 				}
@@ -77,6 +114,56 @@ public final class AutonomousController
 				driveStop(robot);
 				break;
 		}
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 */
+	public static void LowBarAndShootAuto(Robot robot)
+	{
+		switch(autoStep)
+		{
+		case 0:
+		{
+			if (robot.leftDriveEncoder.getDistance() < 96.0)
+			{
+				armMove(robot, -15.0);
+			}
+			else
+			{
+				armMove(robot, 53.0);
+			}
+
+			if (driveForward(robot, 0.0, 0.75, 245.0))
+			{
+				autoStep++;
+			}
+		
+			break;
+		}
+		case 1:
+			if (drivePivot(robot, 65.0, 0.65))
+			{
+				autoStep++;
+			}
+			break;
+		case 2:
+			if (shootBall(robot))
+			{
+				autoStep++;
+			}
+			break;
+//		case 3:
+//			if (armMove(robot, ArmController.HOME_ANGLE))
+//			{
+//				autoStep++;
+//			}
+//			break;
+		default:
+			driveStop(robot);
+			break;
+	}
 	}
 	
 	
@@ -103,7 +190,7 @@ public final class AutonomousController
 	 * @param distance
 	 * @return
 	 */
-	public static boolean driveForward(Robot robot, double bearing, double distance)
+	public static boolean driveForward(Robot robot, double bearing, double speed, double distance)
 	{
 		if (robot.leftDriveEncoder.getDistance() >= distance)
 		{
@@ -112,9 +199,15 @@ public final class AutonomousController
 		}
 		else
 		{
-			double speed = 0.35;
 			double error = bearing - robot.mxp.getAngle();
-			robot.myDrive.tankDrive(speed + (0.10 * error / 10.0), speed - (0.10 * error / 10.0));
+			if (error > 180.0) {
+				error -= 360.0;
+			} else if (error < -180.0) {
+				error += 360.0;
+			}
+			
+			robot.myDrive.tankDrive(-speed - (0.15 * error / 10.0), -speed + (0.15 * error / 10.0));
+			
 			return false;
 		}
 	}
@@ -127,19 +220,24 @@ public final class AutonomousController
 	 * @param bearing	The Gyro setting we are pivoting too.
 	 * @return True if we have reached the desired heading, otherwise false.
 	 */
-	public static boolean drivePivot(Robot robot, double bearing)
+	public static boolean drivePivot(Robot robot, double bearing, double power)
 	{
 		double error = bearing - robot.mxp.getAngle();
+		if (error > 180.0) {
+			error -= 360.0;
+		} else if (error < -180.0) {
+			error += 360.0;
+		}
 		
-		if (error < 0.5 && error > -0.5)
+		if (error < 1 && error > -1.0)
 		{
 			driveStop(robot);
 			return true;
 		}
 		else
 		{
-			double pivotSpeed = 0.30;
-			pivotSpeed += 0.4 * (Math.abs(error) / 90.0);
+			double pivotSpeed = power;
+			//pivotSpeed += 0.4 * (Math.abs(error) / 90.0);
 			if (error < 0.0)
 			{
 				robot.myDrive.tankDrive(+pivotSpeed, -pivotSpeed);
@@ -164,7 +262,8 @@ public final class AutonomousController
 			robot.armController.setTargetAngle(targetAngle);
 		}
 		
-		return robot.armController.onTarget();
+		//return robot.armController.onTarget();
+		return Math.abs(targetAngle - robot.armController.getAngle()) < 3.0;
 	}
 	
 	/***
@@ -174,7 +273,20 @@ public final class AutonomousController
 	 */
 	public static boolean shootBall(Robot robot)
 	{
-		// TODO: implement spinning up motors and shooting.
-		return true;
+		if (robot.leftShooterWheel.get() != 1.0)
+		{
+			robot.leftShooterWheel.set(1.0);
+			robot.rightShooterWheel.set(-1.0);
+		}
+		
+		if ((robot.leftShooterWheel.getSpeed() > 2100.0) && 
+				(Math.abs(robot.armController.getTargetAngle() - robot.armController.getAngle()) < 3.0))
+		{
+			robot.kicker.set(DoubleSolenoid.Value.kForward);
+			robot.ballLoaded = false;
+			return true;
+		}
+		
+		return false;
 	}
 }
