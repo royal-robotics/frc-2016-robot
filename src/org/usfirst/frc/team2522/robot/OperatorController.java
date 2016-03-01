@@ -154,7 +154,7 @@ public final class OperatorController
 				shooterReadyButtonToggle = true;
 				robot.roller.set(0);
 				if(robot.operatorstick.getRawButton(REVERSE_SHOOTER_BUTTON)) {
-					robot.leftShooterWheel.set(0.55);
+					robot.leftShooterWheel.set(0.5);
 					robot.rightShooterWheel.set(-0.55);
 				}
 				else {

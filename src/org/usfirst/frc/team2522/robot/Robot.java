@@ -396,7 +396,9 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putNumber("LE Inches.", leftDriveEncoder.getDistance());
     	SmartDashboard.putNumber("RE Inches", rightDriveEncoder.getDistance());
     	
-
+    	SmartDashboard.putNumber("CLM Raw", climberEncoder.getRaw());
+    	SmartDashboard.putNumber("CLM Inches.", climberEncoder.getDistance());
+    	
     	SmartDashboard.putNumber("LS Motor", leftShooterWheel.get());
     	SmartDashboard.putNumber("RS Motor", rightShooterWheel.get());
     	SmartDashboard.putNumber("LS Speed", leftShooterWheel.getSpeed());
