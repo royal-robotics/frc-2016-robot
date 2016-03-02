@@ -433,7 +433,8 @@ public class Robot extends IterativeRobot
     	{
 	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
 	    	
-    		if (operatorstick.getPOV(0) == 270) {
+    		if (operatorstick.getPOV(0) == 270)
+    		{
 		    	REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
 		    	REFLECTIVE_GREEN_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("green low"), (int)SmartDashboard.getNumber("green high"));
 		    	REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));

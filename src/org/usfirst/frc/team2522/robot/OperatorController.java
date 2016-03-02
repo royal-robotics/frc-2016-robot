@@ -153,13 +153,14 @@ public final class OperatorController
 			{
 				shooterReadyButtonToggle = true;
 				robot.roller.set(0);
+				robot.intake.set(DoubleSolenoid.Value.kReverse);
 				if(robot.operatorstick.getRawButton(REVERSE_SHOOTER_BUTTON)) {
-					robot.leftShooterWheel.set(0.5);
-					robot.rightShooterWheel.set(-0.55);
+					robot.leftShooterWheel.set(0.85);
+					robot.rightShooterWheel.set(-0.85);
 				}
 				else {
-					robot.leftShooterWheel.set(1.0);
-					robot.rightShooterWheel.set(-1.0);
+					robot.leftShooterWheel.set(0.7);
+					robot.rightShooterWheel.set(-0.7);
 				}
 			}
 		}

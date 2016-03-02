@@ -135,7 +135,7 @@ public final class AutonomousController
 				armMove(robot, 53.0);
 			}
 
-			if (driveForward(robot, 0.0, 0.75, 245.0))
+			if (driveForward(robot, 0.0, 0.75, 235.0))
 			{
 				autoStep++;
 			}
@@ -149,7 +149,7 @@ public final class AutonomousController
 			}
 			break;
 		case 2:
-			if (shootBall(robot))
+			if (shootBall(robot, 1950.0))
 			{
 				autoStep++;
 			}
@@ -271,7 +271,7 @@ public final class AutonomousController
 	 * @param robot
 	 * @return
 	 */
-	public static boolean shootBall(Robot robot)
+	public static boolean shootBall(Robot robot, double rpms)
 	{
 		if (robot.leftShooterWheel.get() != 1.0)
 		{
@@ -279,7 +279,7 @@ public final class AutonomousController
 			robot.rightShooterWheel.set(-1.0);
 		}
 		
-		if ((robot.leftShooterWheel.getSpeed() > 2100.0) && 
+		if ((robot.rightShooterWheel.getSpeed() > rpms) && 
 				(Math.abs(robot.armController.getTargetAngle() - robot.armController.getAngle()) < 3.0))
 		{
 			robot.kicker.set(DoubleSolenoid.Value.kForward);
