@@ -9,24 +9,25 @@ public class ArmController extends PIDController
 {
 	// Practice Robot Values
 	//
-	//public static final double HOME_ANGLE = 118.4;	// degrees
-	//public static final double HOME_DEFAULT_VOLTAGE = 3.557; //Practice value
-	//public static final double VOLTS_PER_DEGREE = 0.005575495; //Practice value
+	public static final double HOME_ANGLE = 118.4;	// degrees
+	public static final double HOME_DEFAULT_VOLTAGE = 3.557; //Practice value
+	public static final double FLOOR_ANGLE = -41.0;			  
+	public static final double FLOOR_DEFAULT_VOLTAGE = 2.668;
 
 	// Competition Robot Values
 	//
-	public static final double HOME_ANGLE = 118.9;	// degrees
-	public static final double HOME_DEFAULT_VOLTAGE = 3.190; //Competition value
-	public static final double VOLTS_PER_DEGREE = 0.0054478527; //Competition value
-
+	//public static final double HOME_ANGLE = 118.9;
+	//public static final double HOME_DEFAULT_VOLTAGE = 3.190;
+	//public static final double FLOOR_ANGLE = -41.0;			  
+	//public static final double FLOOR_DEFAULT_VOLTAGE = 2.319;
 	
-	public static final double FLOOR_ANGLE = -41.0;
+	public static final double VOLTS_PER_DEGREE = (HOME_DEFAULT_VOLTAGE - FLOOR_DEFAULT_VOLTAGE) / (HOME_ANGLE - FLOOR_ANGLE);
 	public static final double RAIDIANS_PER_DEGREE = 3.1415 / 180.0;
-	public static final double MIN_POWER = 0.35;	// This is the approximate minimum motor power level needed to hold the arm at straight out at 0 degrees.
+	public static final double MIN_POWER = 0.35;	// This is the approximate minimum motor power level needed to hold the arm straight out at 0 degrees.
 
 	
 	double homeVoltage = HOME_DEFAULT_VOLTAGE;
-	double floorVoltage = HOME_DEFAULT_VOLTAGE - ((HOME_ANGLE - FLOOR_ANGLE) * VOLTS_PER_DEGREE);
+	double floorVoltage = FLOOR_DEFAULT_VOLTAGE;
 	double fullyExtendedVoltage = HOME_DEFAULT_VOLTAGE - (HOME_ANGLE * VOLTS_PER_DEGREE);
 	
 	PIDOutput armMotor;
@@ -36,24 +37,10 @@ public class ArmController extends PIDController
 	{
 		super(1.0, 0.04, 0.2, armSensor, armMotor);
 //		super(0.8, 0.04, 0.35, armSensor, armMotor);
-		//super(1.00, 0.1, 0.05, armSensor, armMotor);
+//		super(1.00, 0.1, 0.05, armSensor, armMotor);
 		this.armMotor = armMotor;
 		this.armSensor = armSensor;
 		this.setOutputRange(-1 + MIN_POWER,  1.0 - MIN_POWER);
-		this.setInputRange(this.floorVoltage, this.homeVoltage);
-		this.setPercentTolerance(50.0);
-	}
-	
-	/**
-	 * Call this function when home limit switch is hit.
-	 * 
-	 * @param voltage the voltage to use for the fully up / home position.
-	 */
-	public void setHomeVoltage(double voltage)
-	{
-		this.homeVoltage = voltage;
-		this.floorVoltage = this.homeVoltage - ((HOME_ANGLE - FLOOR_ANGLE) * VOLTS_PER_DEGREE);
-		this.fullyExtendedVoltage = this.homeVoltage - (HOME_ANGLE * VOLTS_PER_DEGREE);
 		this.setInputRange(this.floorVoltage, this.homeVoltage);
 	}
 	

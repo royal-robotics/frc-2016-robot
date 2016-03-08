@@ -6,8 +6,11 @@ import java.util.Vector;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.ni.vision.NIVision;
+import com.ni.vision.NIVision.DrawMode;
 import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
+import com.ni.vision.NIVision.Rect;
+import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -58,18 +61,18 @@ public class Robot extends IterativeRobot
 		
 	// Analog sensors //
 	AnalogInput armAngle = new AnalogInput(0);
-	AnalogInput sonicRange = new AnalogInput(1);
+	AnalogInput frontSonicRange = new AnalogInput(1);
+	AnalogInput rearSonicRange = new AnalogInput(2);
 	
 
 	// DIO ports //
 	LEDControllerV2 led = new LEDControllerV2(new DigitalOutput(0), new DigitalOutput(1));
 
-	// <Pulses Per Rotation> * <Encoder Mount Up Gearing> <Third Stage Down Gearing> /  * <Wheel Diameter in Inches> * <Pi>
-	//public static double driveTranDistancePerPulse = 1 / (256.0 * (12.0 / 36.0) * (60.0 / 24.0) * 6.0 * 3.1415);
-	public static final double driveTranDistancePerPulse = (18.84/7675.0) * 4;
-	//measured distance per pulse
-	// <Pulses Per Rotation> * <Down Gearing> * <Wheel Diameter in Inches> * <Pi>
-	public static final double climberTranDistancePerPulse = 1 / (360.0 * (42.0 / 60.0) * 1.375 * 3.1415);
+	// (<Wheel Diameter in Inches> * <Pi>) / (<Pulses Per Rotation> * <Encoder Mount Gearing> <Third Stage Gearing>)
+	public static double driveTranDistancePerPulse = (6.0 * 3.1415) / (256.0 * (36.0 / 12.0) * (60.0 / 24.0));
+
+	// (<Wheel Diameter in Inches> * <Pi>) / (<Pulses Per Rotation> * <Output Shaft Gearing>)
+	public static final double climberTranDistancePerPulse = (1.375 * 3.1415) / (360.0 * (60.0 / 44.0));
 	
 	Encoder rightDriveEncoder = new Encoder(new DigitalInput(2), new DigitalInput(3));
 	Encoder leftDriveEncoder = new Encoder(new DigitalInput(4), new DigitalInput(5));
@@ -128,12 +131,14 @@ public class Robot extends IterativeRobot
         climbLock.set(DoubleSolenoid.Value.kReverse);    
 
         // Initialize Encoder Distances
-        leftDriveEncoder.reset();
-        rightDriveEncoder.reset();
-        climberEncoder.reset();
         leftDriveEncoder.setDistancePerPulse(driveTranDistancePerPulse);
+        leftDriveEncoder.reset();
+        
         rightDriveEncoder.setDistancePerPulse(-driveTranDistancePerPulse);
+        rightDriveEncoder.reset();
+
         climberEncoder.setDistancePerPulse(climberTranDistancePerPulse);
+        climberEncoder.reset();
 
         // Initialize CAN Shooter Motor Controllers
         leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
@@ -153,7 +158,7 @@ public class Robot extends IterativeRobot
         rightShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         rightShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         rightShooterWheel.setProfile(0);
-        rightShooterWheel.setF(0.1);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
+        rightShooterWheel.setF(0.1);		// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
         rightShooterWheel.setP(0);
         rightShooterWheel.setI(0);
         rightShooterWheel.setD(0);
@@ -165,13 +170,13 @@ public class Robot extends IterativeRobot
         
         // Initialize drive //
     	myDrive = new RobotDrive(leftDrive, rightDrive);
-        myDrive.setExpiration(0.5);	// this allows camera code enough time to execute between loops.
+        myDrive.setExpiration(1.5);	// this allows camera code enough time to execute between loops.
         
         // Initialize camera
         //
         try
         {
-            // The camera name (ex "cam0") can be found through the roborio web interface
+            // The camera name (ex "cam1") can be found through the roborio web interface http://roboRIO-2522-frc.local/
         	//
         	// This is used for normal camera image updating to dashboard, but not used when doing image processing
         	//
@@ -200,6 +205,8 @@ public class Robot extends IterativeRobot
         SmartDashboard.putNumber("green high", REFLECTIVE_GREEN_RANGE.maxValue);
         SmartDashboard.putNumber("blue low", REFLECTIVE_BLUE_RANGE.minValue);
         SmartDashboard.putNumber("blue high", REFLECTIVE_BLUE_RANGE.maxValue);
+
+        SmartDashboard.putNumber("Area min %", 0.5);
         
         // This value is used to calibrate motor controllers
         // 
@@ -219,11 +226,15 @@ public class Robot extends IterativeRobot
         // reset encoder distances for start of autonomous.
         AutonomousController.driveResetEncoders(this);
 		
+		// enable arm controller
 		armController.enable();
         armController.setSetpoint(armAngle.pidGet());
         
 		// we should start in low gear
-		shifter.set(DoubleSolenoid.Value.kForward);
+		shifter.set(DoubleSolenoid.Value.kForward);	// low gear
+		
+		// kicker should be retracted
+		kicker.set(DoubleSolenoid.Value.kReverse);
 		
 		// intake roller should be stopped and pulled back.
 		roller.set(0.0);
@@ -257,15 +268,24 @@ public class Robot extends IterativeRobot
      */
     public void teleopInit()
     {
-        armController.enable();
+		// enable arm controller
+		armController.enable();
         armController.setSetpoint(armAngle.pidGet());
-
-        shifter.set(DoubleSolenoid.Value.kForward); // low gear
         
-        leftShooterWheel.set(0.0);
-        rightShooterWheel.set(0.0);
-		kicker.set(DoubleSolenoid.Value.kReverse);
+		// we should start in low gear
+		shifter.set(DoubleSolenoid.Value.kForward);	// low gear
 
+		// kicker should be retracted
+		kicker.set(DoubleSolenoid.Value.kReverse);
+		
+		// intake roller should be stopped and pulled back.
+		roller.set(0.0);
+		intake.set(DoubleSolenoid.Value.kReverse);
+		
+		// shooter wheels should not be moving
+		leftShooterWheel.set(0.0);
+		rightShooterWheel.set(0.0);
+		
         updateDashboard();
     }
     
@@ -380,6 +400,34 @@ public class Robot extends IterativeRobot
      */
     
     /**
+     * 
+     * @return	The front range in inches from the sonic range sensor.
+     */
+    public double getFrontRange()
+    {
+    	if (this.frontSonicRange != null)
+    	{
+    		return this.frontSonicRange.getVoltage() * 100.0;
+    	}
+    	
+    	return -1.0;
+    }
+
+    /**
+     * 
+     * @return	The rear range in inches from the sonic range sensor.
+     */
+    public double getRearRange()
+    {
+    	if (rearSonicRange != null)
+    	{
+    		return this.rearSonicRange.getVoltage() * 100.0;
+    	}
+    	
+    	return -1.0;
+    }
+    
+    /**
      * All dashboard updating should be done here, so that the values are updated in all robot operation modes.
      */
     public void updateDashboard()
@@ -393,49 +441,50 @@ public class Robot extends IterativeRobot
     	
     	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kForward) ? "Low" : "High");
     	SmartDashboard.putString("Drive Mode", arcadeMode ? "Arcade" : "Tank");
-    	SmartDashboard.putNumber("LE Raw", leftDriveEncoder.getRaw());
-    	SmartDashboard.putNumber("RE Raw", rightDriveEncoder.getRaw());
+//    	SmartDashboard.putNumber("LE Raw", leftDriveEncoder.getRaw());
+//    	SmartDashboard.putNumber("RE Raw", rightDriveEncoder.getRaw());
     	SmartDashboard.putNumber("LE Inches.", leftDriveEncoder.getDistance());
     	SmartDashboard.putNumber("RE Inches", rightDriveEncoder.getDistance());
     	
     	SmartDashboard.putNumber("CLM Raw", climberEncoder.getRaw());
     	SmartDashboard.putNumber("CLM Inches.", climberEncoder.getDistance());
     	
+//    	SmartDashboard.putBoolean("Ball Loaded", ballLoaded);
+//    	SmartDashboard.putBoolean("Ball Load Switch", ballLoadedSwitch.get());
+    	
+    	SmartDashboard.putString("Intake:", intake.get() == DoubleSolenoid.Value.kForward ? "DOWN" : "UP");
+    	
     	SmartDashboard.putNumber("LS Motor", leftShooterWheel.get());
     	SmartDashboard.putNumber("RS Motor", rightShooterWheel.get());
     	SmartDashboard.putNumber("LS Speed", leftShooterWheel.getSpeed());
     	SmartDashboard.putNumber("RS Speed", rightShooterWheel.getSpeed());
-    	SmartDashboard.putNumber("LS Error", leftShooterWheel.getClosedLoopError());
-    	SmartDashboard.putNumber("RS Error", rightShooterWheel.getClosedLoopError());
+//    	SmartDashboard.putNumber("LS Error", leftShooterWheel.getClosedLoopError());
+//    	SmartDashboard.putNumber("RS Error", rightShooterWheel.getClosedLoopError());
     	
-    	SmartDashboard.putNumber("Sonic Range", sonicRange.getAverageVoltage());
+    	SmartDashboard.putNumber("Front Range", this.getFrontRange());
+    	SmartDashboard.putNumber("Rear Range", this.getRearRange());
 
     	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
     	SmartDashboard.putNumber("Arm Angle", armController.getAngle());
-    	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
-
     	SmartDashboard.putNumber("Arm Motor", armMotor.get());
+
+    	SmartDashboard.putNumber("Arm Target", armController.getSetpoint());
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
     	SmartDashboard.putNumber("Arm Error", armController.getAvgError());
-    	SmartDashboard.putNumber("Arm Target", armController.getSetpoint());
     	SmartDashboard.putBoolean("Arm On Target", armController.onTarget());
-    	
+
     	SmartDashboard.putNumber("Arm Staight Volts", armController.fullyExtendedVoltage);
     	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
     	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
-    	
-    	SmartDashboard.putString("Intake:", intake.get() == DoubleSolenoid.Value.kForward ? "DOWN" : "UP");
-    	
-    	SmartDashboard.putBoolean("Ball Loaded", ballLoaded);
-    	SmartDashboard.putBoolean("Ball Load Switch", ballLoadedSwitch.get());
-    	
+
+//    	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
+    	    	
     	SmartDashboard.putNumber("Calibrate Speed", operatorstick.getRawAxis(3));
     }
     
     public void updateCamera()
     {
-    	/*
     	if (camera != null)
     	{
 	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
@@ -448,7 +497,7 @@ public class Robot extends IterativeRobot
 		    	
 		    	NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.RGB, REFLECTIVE_RED_RANGE, REFLECTIVE_GREEN_RANGE, REFLECTIVE_BLUE_RANGE);
 
-		    	camera.setImage(binaryFrame);
+		    	//camera.setImage(binaryFrame);
 
 		    	//filter out small particles
 				float areaMin = (float)SmartDashboard.getNumber("Area min %", 0.5);
@@ -474,6 +523,9 @@ public class Robot extends IterativeRobot
 					}
 					particles.sort(null);
 
+					NIVision.Rect rect = new NIVision.Rect((int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectLeft, (int)particles.elementAt(0).BoundingRectBottom - (int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectRight - (int)particles.elementAt(0).BoundingRectLeft);
+					NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+					
 					//This example only scores the largest particle. Extending to score all particles and choosing the desired one is left as an exercise
 					//for the reader. Note that this scores and reports information about a single particle (single L shaped target). To get accurate information 
 					//about the location of the tote (not just the distance) you will need to correlate two adjacent targets in order to find the true center of the tote.
@@ -488,7 +540,7 @@ public class Robot extends IterativeRobot
 					//SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.elementAt(0)));
 				}
 				
-		    	//camera.setImage(binaryFrame);
+		    	camera.setImage(frame);
 			}
     		else {
 		    	//NIVision.Rect rect = new NIVision.Rect(10, 10, 100, 100);
@@ -496,6 +548,5 @@ public class Robot extends IterativeRobot
 	            camera.setImage(frame);
     		}
     	}
-    */
     }
 }
