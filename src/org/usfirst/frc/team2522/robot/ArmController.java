@@ -16,7 +16,7 @@ public class ArmController extends PIDController
 	// Competition Robot Values
 	//
 	public static final double HOME_ANGLE = 118.9;	// degrees
-	public static final double HOME_DEFAULT_VOLTAGE = 3.101; //Competition value
+	public static final double HOME_DEFAULT_VOLTAGE = 3.190; //Competition value
 	public static final double VOLTS_PER_DEGREE = 0.0054478527; //Competition value
 
 	

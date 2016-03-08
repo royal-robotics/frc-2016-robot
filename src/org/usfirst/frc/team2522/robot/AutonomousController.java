@@ -67,7 +67,7 @@ public final class AutonomousController
 		switch(autoStep)
 		{
 			case 0:
-				if (driveForward(robot, 0.0, 0.80, 185.0))
+				if (driveForward(robot, 0.0, 0.80, 205.0))
 				{
 					autoStep++;
 				}
@@ -132,10 +132,10 @@ public final class AutonomousController
 			}
 			else
 			{
-				armMove(robot, 53.0);
+				armMove(robot, 70.0);
 			}
-
-			if (driveForward(robot, 0.0, 0.75, 235.0))
+			
+			if (driveForward(robot, 0.0, 0.75, 239.0))
 			{
 				autoStep++;
 			}
@@ -143,13 +143,20 @@ public final class AutonomousController
 			break;
 		}
 		case 1:
-			if (drivePivot(robot, 65.0, 0.65))
+			if (drivePivot(robot, 67.0, 0.65))
 			{
 				autoStep++;
 			}
+			
+			if (robot.leftShooterWheel.get() != 1.0)
+			{
+				robot.leftShooterWheel.set(1.0);
+				robot.rightShooterWheel.set(-1.0);
+			}
+			
 			break;
 		case 2:
-			if (shootBall(robot, 1950.0))
+			if (shootBall(robot, 3000.0))
 			{
 				autoStep++;
 			}

@@ -32,10 +32,9 @@ public final class OperatorController
 	static boolean shooterPosButtonToggle = false;
 	static boolean shooterReadyButtonToggle = false;
 	static boolean climberLockButtonToggle = false;
-	static boolean rollerButtonToggle = false;
 		
 	/**
-	 * Checks the robot control state and activates the pickup system accordingly.
+	 * Checks the robot l state and activates the pickup system accordingly.
 	 * 
 	 * @param robot The robot being operated.
 	 */
@@ -46,29 +45,14 @@ public final class OperatorController
 			robot.ballLoaded = true;	
 		}
 		
-		if ((robot.operatorstick.getPOV(0) == 0) || (robot.leftstick.getRawButton(1))){
+		if (robot.operatorstick.getPOV(0) == 0){
 			robot.intake.set(DoubleSolenoid.Value.kForward);
 		}
 		else if (robot.operatorstick.getPOV(0) == 180)
 		{
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
 		}
-		
-		if (robot.leftstick.getRawButton(1)) {
-			if (!rollerButtonToggle) {
-				if (robot.intake.get() == DoubleSolenoid.Value.kReverse) {
-					robot.intake.set(DoubleSolenoid.Value.kForward);
-				}
-				else {
-					robot.intake.set(DoubleSolenoid.Value.kReverse);
-				}
-				rollerButtonToggle = true;
-			}
-		}
-		else {
-			rollerButtonToggle = false;
-		}
-		
+				
 		if(robot.operatorstick.getRawButton(PICKUP_BUTTON) && ! robot.operatorstick.getRawButton(SHOOTER_READY_BUTTON)) {
 			if (!pickupButtonToggle)
 			{
@@ -112,7 +96,7 @@ public final class OperatorController
     	
 		if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON)) {
 			if(!shooterPosButtonToggle) {
-				robot.armController.setTargetAngle(56.0);
+				robot.armController.setTargetAngle(109.0);
 				shooterPosButtonToggle = true;	
 			}
 		}
@@ -155,12 +139,12 @@ public final class OperatorController
 				robot.roller.set(0);
 				robot.intake.set(DoubleSolenoid.Value.kReverse);
 				if(robot.operatorstick.getRawButton(REVERSE_SHOOTER_BUTTON)) {
-					robot.leftShooterWheel.set(0.85);
-					robot.rightShooterWheel.set(-0.85);
+					robot.leftShooterWheel.set(0.46);
+					robot.rightShooterWheel.set(-0.46);
 				}
 				else {
-					robot.leftShooterWheel.set(0.7);
-					robot.rightShooterWheel.set(-0.7);
+					robot.leftShooterWheel.set(0.5);
+					robot.rightShooterWheel.set(-0.5);
 				}
 			}
 		}

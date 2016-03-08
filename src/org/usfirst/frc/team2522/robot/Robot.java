@@ -58,6 +58,8 @@ public class Robot extends IterativeRobot
 		
 	// Analog sensors //
 	AnalogInput armAngle = new AnalogInput(0);
+	AnalogInput sonicRange = new AnalogInput(1);
+	
 
 	// DIO ports //
 	LEDControllerV2 led = new LEDControllerV2(new DigitalOutput(0), new DigitalOutput(1));
@@ -406,6 +408,8 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putNumber("LS Error", leftShooterWheel.getClosedLoopError());
     	SmartDashboard.putNumber("RS Error", rightShooterWheel.getClosedLoopError());
     	
+    	SmartDashboard.putNumber("Sonic Range", sonicRange.getAverageVoltage());
+
     	SmartDashboard.putNumber("Arm Volts", armAngle.pidGet());	// This is the value used for PID Input.
     	SmartDashboard.putNumber("Arm Angle", armController.getAngle());
     	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
@@ -421,6 +425,8 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
     	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
     	
+    	SmartDashboard.putString("Intake:", intake.get() == DoubleSolenoid.Value.kForward ? "DOWN" : "UP");
+    	
     	SmartDashboard.putBoolean("Ball Loaded", ballLoaded);
     	SmartDashboard.putBoolean("Ball Load Switch", ballLoadedSwitch.get());
     	
@@ -429,6 +435,7 @@ public class Robot extends IterativeRobot
     
     public void updateCamera()
     {
+    	/*
     	if (camera != null)
     	{
 	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
@@ -485,9 +492,10 @@ public class Robot extends IterativeRobot
 			}
     		else {
 		    	//NIVision.Rect rect = new NIVision.Rect(10, 10, 100, 100);
-		        /*NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);*/
+		        //NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);
 	            camera.setImage(frame);
     		}
     	}
+    */
     }
 }
