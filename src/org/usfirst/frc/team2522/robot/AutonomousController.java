@@ -1,6 +1,15 @@
 package org.usfirst.frc.team2522.robot;
 
+import java.util.Vector;
+
+import com.ni.vision.NIVision;
+import com.ni.vision.NIVision.DrawMode;
+import com.ni.vision.NIVision.GetImageSizeResult;
+import com.ni.vision.NIVision.Rect;
+import com.ni.vision.NIVision.ShapeMode;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public final class AutonomousController
 {
@@ -244,7 +253,6 @@ public final class AutonomousController
 		else
 		{
 			double pivotSpeed = power;
-			//pivotSpeed += 0.4 * (Math.abs(error) / 90.0);
 			if (error < 0.0)
 			{
 				robot.myDrive.tankDrive(+pivotSpeed, -pivotSpeed);
@@ -295,5 +303,126 @@ public final class AutonomousController
 		}
 		
 		return false;
+	}
+	
+	/***
+	 * Pivot the robot onto the target if a target is found.
+	 * 
+	 * @param robot
+	 * @return true if robot is on target, otherwise false
+	 */
+	public static boolean trackTarget(Robot robot)
+	{
+		driveResetBearing(robot);
+		
+		double trackingAngle = getTrackingAngle(robot);
+		
+		if (trackingAngle == 180.0)
+		{
+			driveStop(robot);
+		}
+		else if (trackingAngle > 0.5 || trackingAngle < -0.5)
+		{
+			drivePivot(robot, trackingAngle, 0.55);
+		}
+		else
+		{
+			driveStop(robot);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 * @return
+	 */
+	public static double getTrackingAngle(Robot robot)
+	{
+		double result = 180.0;
+		
+    	if (robot.camera != null)
+    	{
+	    	NIVision.IMAQdxGrab(robot.session, robot.frame, 1);	// grab the raw image frame from the camera
+
+    		robot.REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
+    		robot.REFLECTIVE_GREEN_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("green low"), (int)SmartDashboard.getNumber("green high"));
+    		robot.REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));
+	    	
+	    	NIVision.imaqColorThreshold(robot.binaryFrame, robot.frame, 255, NIVision.ColorMode.RGB, robot.REFLECTIVE_RED_RANGE, robot.REFLECTIVE_GREEN_RANGE, robot.REFLECTIVE_BLUE_RANGE);
+
+	    	//filter out small particles
+			float areaMin = (float)SmartDashboard.getNumber("Target Area Min %", 0.5);
+			robot.criteria[0].lower = areaMin;
+			
+			@SuppressWarnings("unused")
+			int imaqError = NIVision.imaqParticleFilter4(robot.binaryFrame, robot.binaryFrame, robot.criteria, robot.filterOptions, null);
+			int numTargets = NIVision.imaqCountParticles(robot.binaryFrame, 1);
+
+			if(numTargets > 0)
+			{
+				//Measure particles and sort by particle size eliminating particles that don't match our profile.
+				//
+				Vector<ImageTarget> targets = new Vector<ImageTarget>();
+				for(int i = 0; i < numTargets; i++)
+				{
+					ImageTarget par = new ImageTarget(
+							NIVision.imaqMeasureParticle(robot.binaryFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
+							NIVision.imaqMeasureParticle(robot.binaryFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
+							NIVision.imaqMeasureParticle(robot.binaryFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
+							NIVision.imaqMeasureParticle(robot.binaryFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT)
+						);
+
+					if (par.IsValidTarget())
+					{
+						//par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
+						//par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
+						targets.add(par);
+					}
+				}
+				
+				numTargets = targets.size();
+
+				if (targets.size() > 0)
+				{
+					targets.sort(null);
+					
+					ImageTarget target = targets.elementAt(0);
+					
+					Rect rect = new Rect(target.Top, target.Left, target.Height(), target.Width());
+					//NIVision.imaqOverlayRect(frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
+					NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+					
+					SmartDashboard.putNumber("Target X", target.X());
+					SmartDashboard.putNumber("Target Y", target.Y());
+					SmartDashboard.putNumber("Target Ratio", (double)target.Width() / (double)target.Height());
+					
+					// TODO: Calculate Target Angle.
+					GetImageSizeResult size = NIVision.imaqGetImageSize(robot.frame);
+					int offset = (size.width / 2) - target.X();
+					if (offset > 5) {
+						result = +10.0;
+					}
+					else if (offset < -5) {
+						result = -10.0;
+					}
+					else {
+						result = 0.0;
+					}
+				}
+				else
+				{
+					SmartDashboard.putNumber("Target X", -1);
+					SmartDashboard.putNumber("Target Y", -1);
+					SmartDashboard.putNumber("Target Ratio", -1);
+				}
+			}
+
+			SmartDashboard.putNumber("Target Count", numTargets);
+    	}
+    	
+    	return result;
 	}
 }

@@ -2,13 +2,11 @@ package org.usfirst.frc.team2522.robot;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick.AxisType;
-import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public final class OperatorController
 {
 //	public static final int CLIMBER_RETRACT_BUTTON = 1;
-//	public static final int ARM_DOWN_BUTTON = 2;
+	public static final int TRACK_TARGET_BUTTON = 2;
 //	public static final int CLIMBER_DEPLOY_BUTTON = 3;
 	public static final int ZAXIS_SHOT_SPEED_BUTTON = 4;
 	public static final int PICKUP_BUTTON = 5;
@@ -16,13 +14,13 @@ public final class OperatorController
 	public static final int SPITOUT_BUTTON = 7;
 	public static final int SHOOT_BUTTON = 8;
 	public static final int SHOOTER_POS_BUTTON = 9;
-	//public static final int CALIBRATE_MOTOR_BUTTON = 10;
 	public static final int WALL_SHOT_SPEED_BUTTON = 10;
 	public static final int CLIMBER_LOCK_BUTTON = 11;
 	
 	public static final int INTAKE_OUT_POV = 0;
 	public static final int INTAKE_IN_POV = 180;
 	public static final int CLIMBER_LOCK_POV = 90;
+	public static final int SHOW_IMAGE_FILTER_POV = 270;
 
 	public static final AxisType CLIMBER_AXIS = AxisType.kY;
 	public static final AxisType ARM_AXIS = AxisType.kThrottle;
@@ -147,7 +145,9 @@ public final class OperatorController
 	 */
 	public static void operateShooter(Robot robot)
 	{
-		if(robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) || robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
+		if(robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
+		   robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) || 
+		   robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 		{
 			if (!operateShooterButtonToggle)
 			{
@@ -166,6 +166,8 @@ public final class OperatorController
 				robot.kicker.set(DoubleSolenoid.Value.kReverse);
 			}
 
+			// Set the shooter motor speed based on which button is selected.
+			//
 			if(robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON)) {
 				robot.leftShooterWheel.set(WALL_SHOT_SPEED);
 				robot.rightShooterWheel.set(-WALL_SHOT_SPEED);
@@ -175,11 +177,6 @@ public final class OperatorController
 				robot.rightShooterWheel.set(-LIP_SHOT_SPEED);
 			}
 			else if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
-			{
-				robot.leftShooterWheel.set(robot.rightstick.getZ());
-				robot.rightShooterWheel.set(-robot.rightstick.getZ());
-			}
-			if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 			{
 				double speed = (robot.rightstick.getZ() + 1.0) / 2.0;
 				robot.leftShooterWheel.set(speed);
@@ -250,45 +247,6 @@ public final class OperatorController
 		else if (robot.operatorstick.getPOV(0) != CLIMBER_LOCK_POV) {
 			climberLockButtonToggle = false;
 		}
-		
 		// TODO: the climber lock needs to be tied to the dashboard timer also, so that it auto locks just before the match ends.
-	}
-	
-	public static void calibrateMotor(Robot robot)
-	{
-		/*
-    	if (robot.operatorstick.getRawButton(CALIBRATE_MOTOR_BUTTON))
-    	{
-			double motorPort = SmartDashboard.getNumber("Calibrate Motor");
-			VictorSP motor = null;
-			boolean valid = true;
-			
-			switch ((int)motorPort)
-			{
-				case 1:
-					motor = robot.leftDrive;
-					break;
-				case 3:
-					motor = robot.armMotor;
-					break;
-				case 5:
-					motor = robot.rightDrive;
-					break;
-				case 6:
-					motor = robot.climber;
-					break;
-				case 7:
-					motor = robot.roller;
-					break;
-				default:
-					valid = false;
-					break;
-			}
-			
-			if (valid) {
-				motor.set(robot.operatorstick.getRawAxis(3));
-			}
-    	}
-    	*/
 	}
 }

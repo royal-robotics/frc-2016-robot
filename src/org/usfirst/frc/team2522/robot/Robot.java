@@ -1,16 +1,10 @@
 
 package org.usfirst.frc.team2522.robot;
 
-import java.util.Comparator;
-import java.util.Vector;
-
 import com.kauailabs.navx.frc.AHRS;
 import com.ni.vision.NIVision;
-import com.ni.vision.NIVision.DrawMode;
 import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
-import com.ni.vision.NIVision.Rect;
-import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -26,26 +20,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot
 {
-	//A structure to hold measurements of a particle
-	public class ParticleReport implements Comparator<ParticleReport>, Comparable<ParticleReport>{
-		double PercentAreaToImageArea;
-		double Area;
-		double BoundingRectLeft;
-		double BoundingRectTop;
-		double BoundingRectRight;
-		double BoundingRectBottom;
-		
-		public int compareTo(ParticleReport r)
-		{
-			return (int)(r.Area - this.Area);
-		}
-		
-		public int compare(ParticleReport r1, ParticleReport r2)
-		{
-			return (int)(r1.Area - r2.Area);
-		}
-	};
-
 	// Gyro / Accelerometer sensor //
 	AHRS mxp = new AHRS(SPI.Port.kMXP);
 
@@ -108,7 +82,6 @@ public class Robot extends IterativeRobot
 	int session = -1;
     Image frame;
 	Image binaryFrame;
-	int imaqError;
 	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 180);
 	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(200, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
@@ -170,7 +143,15 @@ public class Robot extends IterativeRobot
         
         // Initialize drive //
     	myDrive = new RobotDrive(leftDrive, rightDrive);
-        myDrive.setExpiration(1.5);	// this allows camera code enough time to execute between loops.
+
+    	// set motor timeouts high enough that camera vision processing will not interfere.
+    	double motorTimeOut = 0.5;
+    	myDrive.setExpiration(motorTimeOut);
+    	armMotor.setExpiration(motorTimeOut);
+    	rightShooterWheel.setExpiration(motorTimeOut);
+    	leftShooterWheel.setExpiration(motorTimeOut);
+    	roller.setExpiration(motorTimeOut);
+    	climber.setExpiration(motorTimeOut);        
         
         // Initialize camera
         //
@@ -206,11 +187,7 @@ public class Robot extends IterativeRobot
         SmartDashboard.putNumber("blue low", REFLECTIVE_BLUE_RANGE.minValue);
         SmartDashboard.putNumber("blue high", REFLECTIVE_BLUE_RANGE.maxValue);
 
-        SmartDashboard.putNumber("Area min %", 0.5);
-        
-        // This value is used to calibrate motor controllers
-        // 
-        SmartDashboard.putNumber("Calibrate Motor", -1);
+        SmartDashboard.putNumber("Target Area Min %", 0.5);
         
         updateDashboard();
 	}
@@ -303,9 +280,6 @@ public class Robot extends IterativeRobot
     	
     	OperatorController.operateClimber(this);
     	
-		OperatorController.calibrateMotor(this); // If Motor Calibration button is held, activate calibration routine
-    	
-    	
     	// Check for and toggle the drive mode from tank to arcade if button 3 on left stick is pressed.
     	//
     	if (leftstick.getRawButton(3) && !driveModeToggle) {
@@ -339,7 +313,11 @@ public class Robot extends IterativeRobot
     	
     	// Drive the robot
     	//
-    	if (rightstick.getRawButton(4))
+    	if (operatorstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON))
+    	{
+    		AutonomousController.trackTarget(this);
+    	}
+    	else if (rightstick.getRawButton(4))
     	{
     		if (!driveStraightToggle)
     		{
@@ -439,7 +417,7 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putString("Auto Mode", AutonomousController.autoModeString);
     	SmartDashboard.putNumber("Auto Step", AutonomousController.autoStep);
     	
-    	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kForward) ? "Low" : "High");
+    	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kForward) ? "LOW" : "HIGH");
     	SmartDashboard.putString("Drive Mode", arcadeMode ? "Arcade" : "Tank");
 //    	SmartDashboard.putNumber("LE Raw", leftDriveEncoder.getRaw());
 //    	SmartDashboard.putNumber("RE Raw", rightDriveEncoder.getRaw());
@@ -479,87 +457,24 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
 
 //    	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
-    	    	
-    	SmartDashboard.putNumber("Calibrate Speed", operatorstick.getRawAxis(3));
     }
     
     public void updateCamera()
     {
     	if (camera != null)
     	{
-    		if (operatorstick.getPOV(0) == 270)
+	    	if (operatorstick.getPOV(0) == 270)
     		{
-    	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
-
-    	    	REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
-		    	REFLECTIVE_GREEN_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("green low"), (int)SmartDashboard.getNumber("green high"));
-		    	REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));
-		    	
-		    	NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.RGB, REFLECTIVE_RED_RANGE, REFLECTIVE_GREEN_RANGE, REFLECTIVE_BLUE_RANGE);
-
-		    	camera.setImage(binaryFrame);
-
-		    	//filter out small particles
-				float areaMin = (float)SmartDashboard.getNumber("Area min %", 0.5);
-				criteria[0].lower = areaMin;
-				imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
-				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
-				SmartDashboard.putNumber("Masked particles", numParticles);
-
-				if(numParticles > 0)
-				{
-					//Measure particles and sort by particle size
-					Vector<ParticleReport> particles = new Vector<ParticleReport>();
-					for(int particleIndex = 0; particleIndex < numParticles; particleIndex++)
-					{
-						int width = (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT) - (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);;
-						int height = (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM) - (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
-						
-						if (Math.abs(width - height) < 80.0)
-						{
-							ParticleReport par = new ParticleReport();
-							par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
-							par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
-							par.BoundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
-							par.BoundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
-							par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
-							par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
-							particles.add(par);
-						}
-					}
-					
-					SmartDashboard.putNumber("Masked particles", particles.size());
-
-					if (particles.size() > 0)
-					{
-						particles.sort(null);
-						Rect rect = new Rect((int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectLeft, (int)particles.elementAt(0).BoundingRectBottom - (int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectRight - (int)particles.elementAt(0).BoundingRectLeft);
-						NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
-						SmartDashboard.putNumber("Target Top", rect.top);
-						SmartDashboard.putNumber("Target Left", rect.left);
-					}
-					else
-					{
-						SmartDashboard.putNumber("Target Top", -1);
-						SmartDashboard.putNumber("Target Left", -1);
-					}
-					
-					//This example only scores the largest particle. Extending to score all particles and choosing the desired one is left as an exercise
-					//for the reader. Note that this scores and reports information about a single particle (single L shaped target). To get accurate information 
-					//about the location of the tote (not just the distance) you will need to correlate two adjacent targets in order to find the true center of the tote.
-					//scores.Aspect = AspectScore(particles.elementAt(0));
-					//SmartDashboard.putNumber("Aspect", scores.Aspect);
-					//scores.Area = AreaScore(particles.elementAt(0));
-					//SmartDashboard.putNumber("Area", scores.Area);
-					//boolean isTote = scores.Aspect > SCORE_MIN && scores.Area > SCORE_MIN;
-
-					//Send distance and tote status to dashboard. The bounding rect, particularly the horizontal center (left - right) may be useful for rotating/driving towards a tote
-					//SmartDashboard.putBoolean("IsTote", isTote);
-					//SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.elementAt(0)));
-				}
-				
-		    	//camera.setImage(frame);
+	    		AutonomousController.getTrackingAngle(this);
+	    		camera.setImage(binaryFrame);
 			}
+	    	else
+	    	{
+	    		if (!operatorstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON)) {
+	    			NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
+	    		}
+	    		camera.setImage(frame);
+	    	}
     	}
     }
 }
