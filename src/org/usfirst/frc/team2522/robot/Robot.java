@@ -76,6 +76,7 @@ public class Robot extends IterativeRobot
 	boolean arcadeMode = false;
 	boolean shiftToggle = false;
 	boolean driveStraightToggle = false;
+	boolean turnAroundToggle = false;
 	
 	//Camera
 	CameraServer camera;
@@ -327,9 +328,19 @@ public class Robot extends IterativeRobot
     		AutonomousController.driveResetEncoders(this);
     		AutonomousController.driveForward(this, 0, 0.80, 15.0);
     	}
+    	else if (rightstick.getRawButton(3))
+    	{
+    		if (!turnAroundToggle)
+    		{
+    			AutonomousController.driveResetBearing(this);
+    			turnAroundToggle = true;
+    		}
+    		AutonomousController.driveTurnAround(this, 0.80);
+    	}
     	else
     	{
 			driveStraightToggle = false;
+			turnAroundToggle = false;
 	    	if (arcadeMode) {
 	    		myDrive.arcadeDrive(leftstick);
 	    	}
@@ -463,7 +474,7 @@ public class Robot extends IterativeRobot
     {
     	if (camera != null)
     	{
-	    	if (operatorstick.getPOV(0) == 270)
+	    	if (operatorstick.getPOV(0) == OperatorController.SHOW_IMAGE_FILTER_POV)
     		{
 	    		AutonomousController.getTrackingAngle(this);
 	    		camera.setImage(binaryFrame);

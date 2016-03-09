@@ -234,6 +234,7 @@ public final class AutonomousController
 	 * 
 	 * @param robot	The robot being pivoted
 	 * @param bearing	The Gyro setting we are pivoting too.
+	 * @param power The drive motor power to use
 	 * @return True if we have reached the desired heading, otherwise false.
 	 */
 	public static boolean drivePivot(Robot robot, double bearing, double power)
@@ -261,6 +262,29 @@ public final class AutonomousController
 			{
 				robot.myDrive.tankDrive(-pivotSpeed, +pivotSpeed);
 			}
+			return false;
+		}
+	}
+	
+	/***
+	 * Turn the robot to the right until a bearing of 180.0 has been reached.
+	 * 
+	 * @param robot	The robot being pivoted
+	 * @param power The drive motor power to use
+	 * @return True if we have reached the desired heading, otherwise false.
+	 */
+	public static boolean driveTurnAround(Robot robot, double power)
+	{
+		double bearing = robot.mxp.getAngle();
+		
+		if (bearing > 180.0 && bearing < 270.0)
+		{
+			driveStop(robot);
+			return true;
+		}
+		else
+		{
+			robot.myDrive.tankDrive(-power, +power);
 			return false;
 		}
 	}
@@ -321,7 +345,7 @@ public final class AutonomousController
 		{
 			driveStop(robot);
 		}
-		else if (trackingAngle > 0.5 || trackingAngle < -0.5)
+		else if (trackingAngle > 1.0 || trackingAngle < -1.0)
 		{
 			drivePivot(robot, trackingAngle, 0.55);
 		}
