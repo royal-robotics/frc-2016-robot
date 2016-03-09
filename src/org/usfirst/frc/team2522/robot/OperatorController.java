@@ -25,7 +25,7 @@ public final class OperatorController
 	public static final int CLIMBER_LOCK_POV = 90;
 
 	public static final AxisType CLIMBER_AXIS = AxisType.kY;
-	public static final AxisType ARM_AXIS = AxisType.kTwist;
+	public static final AxisType ARM_AXIS = AxisType.kThrottle;
 	
 	// Arm Angles used by various functions
 	public static final double CLOSE_SHOT_ANGLE = 109.0;		// degrees
@@ -103,7 +103,9 @@ public final class OperatorController
 	 * 
 	 * @param robot The robot being operated.
 	 */
-	public static void operateArm(Robot robot) {
+	public static void operateArm(Robot robot)
+	{
+		double axisValue = robot.operatorstick.getAxis(ARM_AXIS); 
     	
 		if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON) || robot.operatorstick.getRawButton(PICKUP_BUTTON) || robot.operatorstick.getRawButton(SPITOUT_BUTTON))
 		{
@@ -121,23 +123,20 @@ public final class OperatorController
 				operateArmButtonToggle = true;	
 			}
 		}
+		else if (axisValue > 0.1 || axisValue < -0.1)
+		{
+			operateArmButtonToggle = true;
+			if (axisValue > 0.1) {
+				robot.armController.setSetpoint(robot.armAngle.pidGet() + (-50.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
+			}
+			else if (axisValue < -0.1) {
+				robot.armController.setSetpoint(robot.armAngle.pidGet() + ( 50.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
+			}
+		}
 		else if (operateArmButtonToggle)
 		{
 			robot.armController.setSetpoint(robot.armAngle.pidGet());
 			operateArmButtonToggle = false;
-		}
-		else
-		{
-			double axisValue = robot.operatorstick.getAxis(ARM_AXIS); 
-			if (axisValue > 0.05) {
-				robot.armController.setSetpoint(robot.armAngle.pidGet() + (-50.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
-			}
-			else if (axisValue < -.05) {
-				robot.armController.setSetpoint(robot.armAngle.pidGet() + ( 50.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
-			}
-			else {
-				robot.armController.setSetpoint(robot.armAngle.pidGet());
-			}
 		}
 	}
 	

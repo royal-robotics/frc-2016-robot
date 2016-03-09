@@ -109,9 +109,9 @@ public class Robot extends IterativeRobot
     Image frame;
 	Image binaryFrame;
 	int imaqError;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(20, 70);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(75, 255);
-	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(20, 90);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 180);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(200, 255);
+	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
@@ -487,17 +487,17 @@ public class Robot extends IterativeRobot
     {
     	if (camera != null)
     	{
-	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
-	    	
     		if (operatorstick.getPOV(0) == 270)
     		{
-		    	REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
+    	    	NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
+
+    	    	REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
 		    	REFLECTIVE_GREEN_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("green low"), (int)SmartDashboard.getNumber("green high"));
 		    	REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));
 		    	
 		    	NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.RGB, REFLECTIVE_RED_RANGE, REFLECTIVE_GREEN_RANGE, REFLECTIVE_BLUE_RANGE);
 
-		    	//camera.setImage(binaryFrame);
+		    	camera.setImage(binaryFrame);
 
 		    	//filter out small particles
 				float areaMin = (float)SmartDashboard.getNumber("Area min %", 0.5);
@@ -512,19 +512,37 @@ public class Robot extends IterativeRobot
 					Vector<ParticleReport> particles = new Vector<ParticleReport>();
 					for(int particleIndex = 0; particleIndex < numParticles; particleIndex++)
 					{
-						ParticleReport par = new ParticleReport();
-						par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
-						par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
-						par.BoundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
-						par.BoundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
-						par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
-						par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
-						particles.add(par);
+						int width = (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT) - (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);;
+						int height = (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM) - (int)NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
+						
+						if (Math.abs(width - height) < 80.0)
+						{
+							ParticleReport par = new ParticleReport();
+							par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
+							par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
+							par.BoundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
+							par.BoundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
+							par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
+							par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
+							particles.add(par);
+						}
 					}
-					particles.sort(null);
+					
+					SmartDashboard.putNumber("Masked particles", particles.size());
 
-					NIVision.Rect rect = new NIVision.Rect((int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectLeft, (int)particles.elementAt(0).BoundingRectBottom - (int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectRight - (int)particles.elementAt(0).BoundingRectLeft);
-					NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+					if (particles.size() > 0)
+					{
+						particles.sort(null);
+						Rect rect = new Rect((int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectLeft, (int)particles.elementAt(0).BoundingRectBottom - (int)particles.elementAt(0).BoundingRectTop, (int)particles.elementAt(0).BoundingRectRight - (int)particles.elementAt(0).BoundingRectLeft);
+						NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+						SmartDashboard.putNumber("Target Top", rect.top);
+						SmartDashboard.putNumber("Target Left", rect.left);
+					}
+					else
+					{
+						SmartDashboard.putNumber("Target Top", -1);
+						SmartDashboard.putNumber("Target Left", -1);
+					}
 					
 					//This example only scores the largest particle. Extending to score all particles and choosing the desired one is left as an exercise
 					//for the reader. Note that this scores and reports information about a single particle (single L shaped target). To get accurate information 
@@ -540,13 +558,8 @@ public class Robot extends IterativeRobot
 					//SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.elementAt(0)));
 				}
 				
-		    	camera.setImage(frame);
+		    	//camera.setImage(frame);
 			}
-    		else {
-		    	//NIVision.Rect rect = new NIVision.Rect(10, 10, 100, 100);
-		        //NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);
-	            camera.setImage(frame);
-    		}
     	}
     }
 }
