@@ -16,9 +16,9 @@ public class LEDRegOutThread extends Thread {
 	}
 	
 	public void run() {
-		writeColor(clock, dataOut, ledColor.getRed());
-		writeColor(clock, dataOut, ledColor.getGreen());
 		writeColor(clock, dataOut, ledColor.getBlue());
+		writeColor(clock, dataOut, ledColor.getGreen());
+		writeColor(clock, dataOut, ledColor.getRed());
 	}
 	
 	private void writeColor(DigitalOutput clock, DigitalOutput dataOut, int data) {
