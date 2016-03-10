@@ -246,7 +246,7 @@ public final class AutonomousController
 			error += 360.0;
 		}
 		
-		if (error < 1 && error > -1.0)
+		if (error < 1.0 && error > -1.0)
 		{
 			driveStop(robot);
 			return true;
@@ -340,6 +340,7 @@ public final class AutonomousController
 		driveResetBearing(robot);
 		
 		double trackingAngle = getTrackingAngle(robot);
+		SmartDashboard.putNumber("Target Pivot", trackingAngle);
 		
 		if (trackingAngle == 180.0)
 		{
@@ -347,7 +348,7 @@ public final class AutonomousController
 		}
 		else if (trackingAngle > 1.0 || trackingAngle < -1.0)
 		{
-			drivePivot(robot, trackingAngle, 0.55);
+			drivePivot(robot, trackingAngle, 0.42);
 		}
 		else
 		{
@@ -376,14 +377,18 @@ public final class AutonomousController
     		robot.REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));
 	    	
 	    	NIVision.imaqColorThreshold(robot.binaryFrame, robot.frame, 255, NIVision.ColorMode.RGB, robot.REFLECTIVE_RED_RANGE, robot.REFLECTIVE_GREEN_RANGE, robot.REFLECTIVE_BLUE_RANGE);
+	    	
+	    	robot.camera.setImage(robot.binaryFrame);
 
 	    	//filter out small particles
-			float areaMin = (float)SmartDashboard.getNumber("Target Area Min %", 0.5);
+			float areaMin = (float)SmartDashboard.getNumber("Target Area Min %", 0.05);
 			robot.criteria[0].lower = areaMin;
 			
-			@SuppressWarnings("unused")
 			int imaqError = NIVision.imaqParticleFilter4(robot.binaryFrame, robot.binaryFrame, robot.criteria, robot.filterOptions, null);
 			int numTargets = NIVision.imaqCountParticles(robot.binaryFrame, 1);
+
+			SmartDashboard.putNumber("Target Candidates", numTargets);
+			SmartDashboard.putNumber("Target Error", imaqError);
 
 			if(numTargets > 0)
 			{
@@ -426,11 +431,13 @@ public final class AutonomousController
 					// TODO: Calculate Target Angle.
 					GetImageSizeResult size = NIVision.imaqGetImageSize(robot.frame);
 					int offset = (size.width / 2) - target.X();
+					SmartDashboard.putNumber("Target Offset", offset);
+
 					if (offset > 5) {
-						result = +10.0;
+						result = -10.0;
 					}
 					else if (offset < -5) {
-						result = -10.0;
+						result = +10.0;
 					}
 					else {
 						result = 0.0;
@@ -442,6 +449,12 @@ public final class AutonomousController
 					SmartDashboard.putNumber("Target Y", -1);
 					SmartDashboard.putNumber("Target Ratio", -1);
 				}
+			}
+			else
+			{
+				SmartDashboard.putNumber("Target X", -1);
+				SmartDashboard.putNumber("Target Y", -1);
+				SmartDashboard.putNumber("Target Ratio", -1);
 			}
 
 			SmartDashboard.putNumber("Target Count", numTargets);

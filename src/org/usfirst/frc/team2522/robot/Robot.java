@@ -83,8 +83,8 @@ public class Robot extends IterativeRobot
 	int session = -1;
     Image frame;
 	Image binaryFrame;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 180);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(200, 255);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 128);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(140, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
@@ -174,7 +174,7 @@ public class Robot extends IterativeRobot
     		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
     		
     		// Setup image processing criteria
-    		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, 0.5, 100.0, 0, 0);
+    		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, 0.05, 100.0, 0, 0);
         }
         catch (Exception e)
         {
@@ -188,7 +188,7 @@ public class Robot extends IterativeRobot
         SmartDashboard.putNumber("blue low", REFLECTIVE_BLUE_RANGE.minValue);
         SmartDashboard.putNumber("blue high", REFLECTIVE_BLUE_RANGE.maxValue);
 
-        SmartDashboard.putNumber("Target Area Min %", 0.5);
+        SmartDashboard.putNumber("Target Area Min %", 0.05);
         
         updateDashboard();
 	}
@@ -477,7 +477,7 @@ public class Robot extends IterativeRobot
 	    	if (operatorstick.getPOV(0) == OperatorController.SHOW_IMAGE_FILTER_POV)
     		{
 	    		AutonomousController.getTrackingAngle(this);
-	    		camera.setImage(binaryFrame);
+	    		//camera.setImage(binaryFrame);
 			}
 	    	else
 	    	{

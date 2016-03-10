@@ -28,7 +28,7 @@ public final class OperatorController
 	// Arm Angles used by various functions
 	public static final double CLOSE_SHOT_ANGLE = 109.0;		// degrees
 	public static final double OUTERWORKS_SHOT_ANGLE = 58.0;	// degrees
-	public static final double PICKUP_ANGLE = -15.0;			// degrees
+	public static final double PICKUP_ANGLE = -19.0;			// degrees
 	public static final double SPITOUT_ANGLE = -15.0;			// degrees
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -15.0;	// degrees
 	

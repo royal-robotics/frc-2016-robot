@@ -57,7 +57,8 @@ public class ImageTarget implements Comparator<ImageTarget>, Comparable<ImageTar
 	public boolean IsValidTarget()
 	{
 		double ratio = (double)this.Width() / (double)this.Height();
-		if (ratio > 1.45 && ratio < 1.85)
+		
+		if (ratio > 1.2 && ratio < 2.2)
 		{
 			return true;
 		}
