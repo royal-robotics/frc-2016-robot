@@ -83,6 +83,7 @@ public class Robot extends IterativeRobot
 	int session = -1;
     Image frame;
 	Image binaryFrame;
+	Image particalFrame;
 	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 128);
 	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(140, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
@@ -172,6 +173,7 @@ public class Robot extends IterativeRobot
             // Create image objects
             frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
     		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
+    		particalFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
     		
     		// Setup image processing criteria
     		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, 0.05, 100.0, 0, 0);
@@ -477,7 +479,7 @@ public class Robot extends IterativeRobot
 	    	if (operatorstick.getPOV(0) == OperatorController.SHOW_IMAGE_FILTER_POV)
     		{
 	    		AutonomousController.getTrackingAngle(this);
-	    		//camera.setImage(binaryFrame);
+	    		camera.setImage(binaryFrame);
 			}
 	    	else
 	    	{

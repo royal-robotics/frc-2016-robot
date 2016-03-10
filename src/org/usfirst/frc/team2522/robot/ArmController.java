@@ -7,19 +7,19 @@ import edu.wpi.first.wpilibj.PIDSource;
 
 public class ArmController extends PIDController
 {
+
 	// Practice Robot Values
 	//
-	public static final double HOME_ANGLE = 116.5;	// degrees
 	public static final double HOME_DEFAULT_VOLTAGE = 3.615; //Practice value
-	public static final double FLOOR_ANGLE = -49;			  
 	public static final double FLOOR_DEFAULT_VOLTAGE = 2.753;
 
 	// Competition Robot Values
 	//
-	//public static final double HOME_ANGLE = 116.5;
 	//public static final double HOME_DEFAULT_VOLTAGE = 2.948;
-	//public static final double FLOOR_ANGLE = -48.2;			  
 	//public static final double FLOOR_DEFAULT_VOLTAGE = 2.090;
+
+	public static final double HOME_ANGLE = 116.5;	// degrees
+	public static final double FLOOR_ANGLE = -48;			  
 	
 	public static final double VOLTS_PER_DEGREE = (HOME_DEFAULT_VOLTAGE - FLOOR_DEFAULT_VOLTAGE) / (HOME_ANGLE - FLOOR_ANGLE);
 	public static final double RAIDIANS_PER_DEGREE = 3.1415 / 180.0;

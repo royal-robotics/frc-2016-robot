@@ -26,16 +26,20 @@ public final class OperatorController
 	public static final AxisType ARM_AXIS = AxisType.kThrottle;
 	
 	// Arm Angles used by various functions
-	public static final double CLOSE_SHOT_ANGLE = 109.0;		// degrees
+	public static final double CLOSE_SHOT_ANGLE = 105.0;		// degrees
 	public static final double OUTERWORKS_SHOT_ANGLE = 58.0;	// degrees
 	public static final double PICKUP_ANGLE = -19.0;			// degrees
 	public static final double SPITOUT_ANGLE = -15.0;			// degrees
-	public static final double LOW_GOAL_TRAVERSE_ANGLE = -15.0;	// degrees
 	
 	public static final double PICKUP_SPEED = 0.45;
+	
 	public static final double SPITOUT_SPEED = 0.45;
-	public static final double WALL_SHOT_SPEED = 0.46;
-	public static final double LIP_SHOT_SPEED = 0.5;
+	
+	public static final double WALL_SHOT_POWER = 0.46;
+	public static final double WALL_SHOT_RPMS = 2500.0;	// 2500 on comp bot)
+	
+	public static final double LIP_SHOT_POWER = 0.5;
+	public static final double LIP_SHOT_RPMS = 3200.0;	// 3200 on comp bot)
 	
 	// Used to stop the arm after arm move buttons are no longer being pressed.
 	//
@@ -169,12 +173,12 @@ public final class OperatorController
 			// Set the shooter motor speed based on which button is selected.
 			//
 			if(robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON)) {
-				robot.leftShooterWheel.set(WALL_SHOT_SPEED);
-				robot.rightShooterWheel.set(-WALL_SHOT_SPEED);
+				robot.leftShooterWheel.set(WALL_SHOT_POWER);
+				robot.rightShooterWheel.set(-WALL_SHOT_POWER);
 			}
 			else if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON)){
-				robot.leftShooterWheel.set(LIP_SHOT_SPEED);
-				robot.rightShooterWheel.set(-LIP_SHOT_SPEED);
+				robot.leftShooterWheel.set(LIP_SHOT_POWER);
+				robot.rightShooterWheel.set(-LIP_SHOT_POWER);
 			}
 			else if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 			{
