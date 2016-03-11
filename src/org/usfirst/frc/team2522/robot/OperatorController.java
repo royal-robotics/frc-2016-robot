@@ -5,9 +5,9 @@ import edu.wpi.first.wpilibj.Joystick.AxisType;
 
 public final class OperatorController
 {
-//	public static final int CLIMBER_RETRACT_BUTTON = 1;
+	public static final int FIELD_SHOT_SPEED_BUTTON = 1;
 	public static final int TRACK_TARGET_BUTTON = 2;
-//	public static final int CLIMBER_DEPLOY_BUTTON = 3;
+	public static final int FIELD_SHOT_ANGLE_BUTTON = 3;
 	public static final int ZAXIS_SHOT_SPEED_BUTTON = 4;
 	public static final int PICKUP_BUTTON = 5;
 	public static final int LIP_SHOT_SPEED_BUTTON = 6;
@@ -29,17 +29,20 @@ public final class OperatorController
 	public static final double CLOSE_SHOT_ANGLE = 105.0;		// degrees
 	public static final double OUTERWORKS_SHOT_ANGLE = 58.0;	// degrees
 	public static final double PICKUP_ANGLE = -19.0;			// degrees
-	public static final double SPITOUT_ANGLE = -15.0;			// degrees
+	public static final double SPITOUT_ANGLE = -10.0;			// degrees
 	
 	public static final double PICKUP_SPEED = 0.45;
 	
-	public static final double SPITOUT_SPEED = 0.45;
+	public static final double SPITOUT_SPEED = 0.85;
 	
-	public static final double WALL_SHOT_POWER = 0.46;
+	public static final double WALL_SHOT_POWER = 0.429;
 	public static final double WALL_SHOT_RPMS = 2500.0;	// 2500 on comp bot)
 	
 	public static final double LIP_SHOT_POWER = 0.5;
 	public static final double LIP_SHOT_RPMS = 3200.0;	// 3200 on comp bot)
+	
+	public static final double FIELD_SHOT_ANGLE = 50.0;
+	public static final double FIELD_SHOT_POWER = 0.56;
 	
 	// Used to stop the arm after arm move buttons are no longer being pressed.
 	//
@@ -109,7 +112,11 @@ public final class OperatorController
 	{
 		double axisValue = robot.operatorstick.getAxis(ARM_AXIS); 
     	
-		if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON) || robot.operatorstick.getRawButton(PICKUP_BUTTON) || robot.operatorstick.getRawButton(SPITOUT_BUTTON))
+		if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON) || 
+			robot.operatorstick.getRawButton(PICKUP_BUTTON) || 
+			robot.operatorstick.getRawButton(SPITOUT_BUTTON) ||
+			robot.operatorstick.getRawButton(FIELD_SHOT_ANGLE_BUTTON)
+			)
 		{
 			if(!operateArmButtonToggle)
 			{
@@ -121,6 +128,9 @@ public final class OperatorController
 				}
 				else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)) {
 					robot.armController.setTargetAngle(SPITOUT_ANGLE);
+				}
+				else if (robot.operatorstick.getRawButton(FIELD_SHOT_ANGLE_BUTTON)) {
+					robot.armController.setTargetAngle(FIELD_SHOT_ANGLE);
 				}
 				operateArmButtonToggle = true;	
 			}
@@ -151,7 +161,9 @@ public final class OperatorController
 	{
 		if(robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
 		   robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) || 
-		   robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
+		   robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON) ||
+		   robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON) ||
+		   robot.operatorstick.getRawButton(SPITOUT_BUTTON))
 		{
 			if (!operateShooterButtonToggle)
 			{
@@ -180,6 +192,14 @@ public final class OperatorController
 				robot.leftShooterWheel.set(LIP_SHOT_POWER);
 				robot.rightShooterWheel.set(-LIP_SHOT_POWER);
 			}
+			else if (robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON)){
+				robot.leftShooterWheel.set(FIELD_SHOT_POWER);
+				robot.rightShooterWheel.set(-FIELD_SHOT_POWER);
+			}
+			else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)){
+				robot.leftShooterWheel.set(SPITOUT_SPEED);
+				robot.rightShooterWheel.set(-SPITOUT_SPEED);
+			}
 			else if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 			{
 				double speed = (robot.rightstick.getZ() + 1.0) / 2.0;
@@ -193,15 +213,6 @@ public final class OperatorController
 				robot.kicker.set(DoubleSolenoid.Value.kReverse);
 				robot.leftShooterWheel.set(-PICKUP_SPEED);
 				robot.rightShooterWheel.set(PICKUP_SPEED);
-				operateShooterButtonToggle = true;
-			}
-		}
-		else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)) {
-			if (!operateShooterButtonToggle)
-			{
-				robot.kicker.set(DoubleSolenoid.Value.kReverse);
-				robot.leftShooterWheel.set(SPITOUT_SPEED);
-				robot.rightShooterWheel.set(-SPITOUT_SPEED);
 				operateShooterButtonToggle = true;
 			}
 		}
@@ -222,7 +233,7 @@ public final class OperatorController
 	{
 		// TODO: the climber motor should be controlled by a PIDController set in distance mode
 		//
-		if (robot.climbLock.get() != DoubleSolenoid.Value.kForward) {
+		//if (robot.climbLock.get() != DoubleSolenoid.Value.kForward) {
 			double axisValue = robot.operatorstick.getAxis(CLIMBER_AXIS); 
 			if (axisValue > 0.05) {
 				robot.climber.set(axisValue);
@@ -233,7 +244,7 @@ public final class OperatorController
 			else {
 				robot.climber.set(0);
 			}
-		}
+		//}
 		
 		if (robot.operatorstick.getPOV(0) == CLIMBER_LOCK_POV) {
 			if (!climberLockButtonToggle)
