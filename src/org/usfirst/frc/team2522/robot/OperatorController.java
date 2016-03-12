@@ -5,8 +5,9 @@ import edu.wpi.first.wpilibj.Joystick.AxisType;
 
 public final class OperatorController
 {
+	// Operator Stick Buttons
 	public static final int FIELD_SHOT_SPEED_BUTTON = 1;
-	public static final int TRACK_TARGET_BUTTON = 2;
+	public static final int INTAKE_BUTTON = 2;
 	public static final int FIELD_SHOT_ANGLE_BUTTON = 3;
 	public static final int ZAXIS_SHOT_SPEED_BUTTON = 4;
 	public static final int PICKUP_BUTTON = 5;
@@ -16,29 +17,36 @@ public final class OperatorController
 	public static final int SHOOTER_POS_BUTTON = 9;
 	public static final int WALL_SHOT_SPEED_BUTTON = 10;
 	public static final int CLIMBER_LOCK_BUTTON = 11;
-	
+
+	// Operator Stick POV Values
 	public static final int INTAKE_OUT_POV = 0;
 	public static final int INTAKE_IN_POV = 180;
 	public static final int CLIMBER_LOCK_POV = 90;
 	public static final int SHOW_IMAGE_FILTER_POV = 270;
 
+	// Operator Stick Joystick Axis
 	public static final AxisType CLIMBER_AXIS = AxisType.kY;
 	public static final AxisType ARM_AXIS = AxisType.kThrottle;
+
+	// Driver Stick Buttons
+	public static final int TOGGLE_SHIFTER_BUTTON = 1;
+	public static final int TRACK_TARGET_BUTTON = 2;
+	public static final int DRIVE_MODE_CHANGE_BUTTON = 3;	// left stick
+	public static final int TURN_AROUND_BUTTON = 3;			// right stick
+	public static final int DRIVE_STRAIGHT_BUTTON = 4;
 	
 	// Arm Angles used by various functions
-	public static final double CLOSE_SHOT_ANGLE = 105.0;		// degrees
-	public static final double OUTERWORKS_SHOT_ANGLE = 58.0;	// degrees
 	public static final double PICKUP_ANGLE = -19.0;			// degrees
+	public static final double PICKUP_POWER = 0.45;
+	
 	public static final double SPITOUT_ANGLE = -10.0;			// degrees
+	public static final double SPITOUT_POWER = 0.85;
 	
-	public static final double PICKUP_SPEED = 0.45;
-	
-	public static final double SPITOUT_SPEED = 0.85;
-	
-	public static final double WALL_SHOT_POWER = 0.429;
+	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
+	public static final double WALL_SHOT_POWER = 0.438;
 	public static final double WALL_SHOT_RPMS = 2500.0;	// 2500 on comp bot)
 	
-	public static final double LIP_SHOT_POWER = 0.5;
+	public static final double LIP_SHOT_POWER = 0.507;
 	public static final double LIP_SHOT_RPMS = 3200.0;	// 3200 on comp bot)
 	
 	public static final double FIELD_SHOT_ANGLE = 50.0;
@@ -71,7 +79,9 @@ public final class OperatorController
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
 		}
 
-		if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON))
+		if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
+			robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||
+			robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON))
 		{
 			if (!pickupButtonToggle)
 			{
@@ -121,7 +131,7 @@ public final class OperatorController
 			if(!operateArmButtonToggle)
 			{
 				if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON)) {
-					robot.armController.setTargetAngle(CLOSE_SHOT_ANGLE);
+					robot.armController.setTargetAngle(WALL_SHOT_ANGLE);
 				}
 				else if (robot.operatorstick.getRawButton(PICKUP_BUTTON)) {
 					robot.armController.setTargetAngle(PICKUP_ANGLE);
@@ -197,8 +207,8 @@ public final class OperatorController
 				robot.rightShooterWheel.set(-FIELD_SHOT_POWER);
 			}
 			else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)){
-				robot.leftShooterWheel.set(SPITOUT_SPEED);
-				robot.rightShooterWheel.set(-SPITOUT_SPEED);
+				robot.leftShooterWheel.set(SPITOUT_POWER);
+				robot.rightShooterWheel.set(-SPITOUT_POWER);
 			}
 			else if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 			{
@@ -207,12 +217,21 @@ public final class OperatorController
 				robot.rightShooterWheel.set(-speed);
 			}
 		}
+		else if (robot.operatorstick.getRawButton(INTAKE_BUTTON)) {
+			if (!operateShooterButtonToggle)
+			{
+				robot.kicker.set(DoubleSolenoid.Value.kReverse);
+				robot.leftShooterWheel.set(-PICKUP_POWER);
+				robot.rightShooterWheel.set(PICKUP_POWER);
+				operateShooterButtonToggle = true;
+			}
+		}
 		else if (robot.operatorstick.getRawButton(PICKUP_BUTTON)) {
 			if (!operateShooterButtonToggle)
 			{
 				robot.kicker.set(DoubleSolenoid.Value.kReverse);
-				robot.leftShooterWheel.set(-PICKUP_SPEED);
-				robot.rightShooterWheel.set(PICKUP_SPEED);
+				robot.leftShooterWheel.set(-PICKUP_POWER);
+				robot.rightShooterWheel.set(PICKUP_POWER);
 				operateShooterButtonToggle = true;
 			}
 		}

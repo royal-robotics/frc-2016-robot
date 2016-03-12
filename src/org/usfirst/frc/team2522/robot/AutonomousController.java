@@ -23,7 +23,7 @@ public final class AutonomousController
 	public static final double DRIVE_FORWARD_SHOT_POWER = 0.56; 	// 3000 rpms on practice robot.
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2700.0;	// 3200 rpms on practice robot.
 
-	static String autoModeString = "LowBarAndShoot";
+	static String autoModeString = "DoNothing";
 	static int autoMode = 0;
 	static int autoStep = 0;
 	

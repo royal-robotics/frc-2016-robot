@@ -285,7 +285,7 @@ public class Robot extends IterativeRobot
     	
     	// Check for and toggle the drive mode from tank to arcade if button 3 on left stick is pressed.
     	//
-    	if (leftstick.getRawButton(3) && !driveModeToggle) {
+    	if (leftstick.getRawButton(OperatorController.DRIVE_MODE_CHANGE_BUTTON) && !driveModeToggle) {
     		if (!driveModeToggle) {
     			arcadeMode = ! arcadeMode;
         		driveModeToggle = true;
@@ -297,7 +297,7 @@ public class Robot extends IterativeRobot
     	
     	// Toggle shifter if either stick button 1 is pressed.
     	//
-    	if (rightstick.getRawButton(1) || (leftstick.getRawButton(1)))
+    	if (rightstick.getRawButton(OperatorController.TOGGLE_SHIFTER_BUTTON) || (leftstick.getRawButton(OperatorController.TOGGLE_SHIFTER_BUTTON)))
     	{
     		if (!shiftToggle){
     			if (shifter.get() == DoubleSolenoid.Value.kForward) {
@@ -316,11 +316,11 @@ public class Robot extends IterativeRobot
     	
     	// Drive the robot
     	//
-    	if (operatorstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON))
+    	if (leftstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON) || rightstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON))
     	{
     		AutonomousController.trackTarget(this);
     	}
-    	else if (rightstick.getRawButton(4))
+    	else if (rightstick.getRawButton(OperatorController.DRIVE_STRAIGHT_BUTTON))
     	{
     		if (!driveStraightToggle)
     		{
@@ -330,7 +330,7 @@ public class Robot extends IterativeRobot
     		AutonomousController.driveResetEncoders(this);
     		AutonomousController.driveForward(this, 0, 0.80, 15.0);
     	}
-    	else if (rightstick.getRawButton(3))
+    	else if (rightstick.getRawButton(OperatorController.TURN_AROUND_BUTTON))
     	{
     		if (!turnAroundToggle)
     		{
@@ -476,16 +476,18 @@ public class Robot extends IterativeRobot
     {
     	if (camera != null)
     	{
-	    	if (operatorstick.getPOV(0) == OperatorController.SHOW_IMAGE_FILTER_POV)
+	    	if (leftstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON) || rightstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON))
+	    	{
+	    		camera.setImage(frame);
+	    	}
+	    	else if (operatorstick.getPOV(0) == OperatorController.SHOW_IMAGE_FILTER_POV)
     		{
 	    		AutonomousController.getTrackingAngle(this);
 	    		camera.setImage(binaryFrame);
 			}
 	    	else
 	    	{
-	    		if (!operatorstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON)) {
-	    			NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
-	    		}
+    			NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
 	    		camera.setImage(frame);
 	    	}
     	}
