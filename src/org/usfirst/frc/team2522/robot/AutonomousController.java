@@ -15,11 +15,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public final class AutonomousController
 {
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -20.0;	// degrees
-	public static final double LOW_GOAL_SHOT_ANGLE = 50.0;		// degrees
+	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees
 	public static final double LOW_GOAL_SHOT_POWER = 0.56;		// ?? rpms on practice robot.
 	public static final double LOW_GOAL_SHOT_RPMS = 2700.0;		// not sure if accurate.
 
-	public static final double DRIVE_FORWARD_SHOT_ANGLE = 50.0;
+	public static final double DRIVE_FORWARD_SHOT_ANGLE = 55.0;
 	public static final double DRIVE_FORWARD_SHOT_POWER = 0.56; 	// 3000 rpms on practice robot.
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2700.0;	// 3200 rpms on practice robot.
 

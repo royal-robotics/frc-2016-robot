@@ -84,8 +84,8 @@ public class Robot extends IterativeRobot
     Image frame;
 	Image binaryFrame;
 	Image particalFrame;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 135);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(140, 255);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 255);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(220, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
@@ -439,6 +439,7 @@ public class Robot extends IterativeRobot
     	
     	SmartDashboard.putNumber("CLM Raw", climberEncoder.getRaw());
     	SmartDashboard.putNumber("CLM Inches.", climberEncoder.getDistance());
+    	SmartDashboard.putString("CLM Lock", this.climbLock.get() == DoubleSolenoid.Value.kForward ? "LOCKED" : "UNLOCKED");
     	
 //    	SmartDashboard.putBoolean("Ball Loaded", ballLoaded);
 //    	SmartDashboard.putBoolean("Ball Load Switch", ballLoadedSwitch.get());
@@ -487,8 +488,8 @@ public class Robot extends IterativeRobot
 			}
 	    	else
 	    	{
-    			NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
-	    		camera.setImage(frame);
+    			//NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
+	    		//camera.setImage(frame);
 	    	}
     	}
     }

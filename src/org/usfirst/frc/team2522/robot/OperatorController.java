@@ -23,6 +23,7 @@ public final class OperatorController
 	public static final int INTAKE_IN_POV = 180;
 	public static final int CLIMBER_LOCK_POV = 90;
 	public static final int SHOW_IMAGE_FILTER_POV = 270;
+	public static final int CLIMBER_ANGLE_POV = 270;
 
 	// Operator Stick Joystick Axis
 	public static final AxisType CLIMBER_AXIS = AxisType.kY;
@@ -36,7 +37,9 @@ public final class OperatorController
 	public static final int DRIVE_STRAIGHT_BUTTON = 4;
 	
 	// Arm Angles used by various functions
-	public static final double PICKUP_ANGLE = -19.0;			// degrees
+	public static final double CLIMB_ANGLE = 68.0;
+			
+	public static final double PICKUP_ANGLE = -12.0;			// degrees
 	public static final double PICKUP_POWER = 0.45;
 	
 	public static final double SPITOUT_ANGLE = -10.0;			// degrees
@@ -49,7 +52,7 @@ public final class OperatorController
 	public static final double LIP_SHOT_POWER = 0.507;
 	public static final double LIP_SHOT_RPMS = 3200.0;	// 3200 on comp bot)
 	
-	public static final double FIELD_SHOT_ANGLE = 50.0;
+	public static final double FIELD_SHOT_ANGLE = 55.0;
 	public static final double FIELD_SHOT_POWER = 0.56;
 	
 	// Used to stop the arm after arm move buttons are no longer being pressed.
@@ -125,7 +128,8 @@ public final class OperatorController
 		if (robot.operatorstick.getRawButton(SHOOTER_POS_BUTTON) || 
 			robot.operatorstick.getRawButton(PICKUP_BUTTON) || 
 			robot.operatorstick.getRawButton(SPITOUT_BUTTON) ||
-			robot.operatorstick.getRawButton(FIELD_SHOT_ANGLE_BUTTON)
+			robot.operatorstick.getRawButton(FIELD_SHOT_ANGLE_BUTTON)||
+			robot.operatorstick.getPOV(0) == CLIMBER_ANGLE_POV			
 			)
 		{
 			if(!operateArmButtonToggle)
@@ -141,6 +145,9 @@ public final class OperatorController
 				}
 				else if (robot.operatorstick.getRawButton(FIELD_SHOT_ANGLE_BUTTON)) {
 					robot.armController.setTargetAngle(FIELD_SHOT_ANGLE);
+				}
+				else if (robot.operatorstick.getPOV(0) == CLIMBER_ANGLE_POV) {
+					robot.armController.setTargetAngle(CLIMB_ANGLE);
 				}
 				operateArmButtonToggle = true;	
 			}

@@ -15,13 +15,13 @@ public class ArmController extends PIDController
 
 	// Competition Robot Values
 	//
-	public static final double HOME_DEFAULT_VOLTAGE = 2.948;
-	public static final double FLOOR_DEFAULT_VOLTAGE = 2.090;
+	public static final double HOME_DEFAULT_VOLTAGE = 2.671;
+	public static final double FLOOR_DEFAULT_VOLTAGE = 1.841;
 
-	public static final double HOME_ANGLE = 116.5;	// degrees
-	public static final double FLOOR_ANGLE = -48;			  
+	public static final double HOME_ANGLE = 116;	// degrees
+	public static final double FLOOR_ANGLE = -38;			  
 	
-	public static final double VOLTS_PER_DEGREE = (HOME_DEFAULT_VOLTAGE - FLOOR_DEFAULT_VOLTAGE) / (HOME_ANGLE - FLOOR_ANGLE);
+	public static double VOLTS_PER_DEGREE = (HOME_DEFAULT_VOLTAGE - FLOOR_DEFAULT_VOLTAGE) / (HOME_ANGLE - FLOOR_ANGLE);
 	public static final double RAIDIANS_PER_DEGREE = 3.1415 / 180.0;
 	public static final double MIN_POWER = 0.00;	// This is the approximate minimum motor power level needed to hold the arm straight out at 0 degrees.
 
