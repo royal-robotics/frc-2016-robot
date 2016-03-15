@@ -22,6 +22,49 @@ public final class AutonomousController
 	public static final double DRIVE_FORWARD_SHOT_ANGLE = 55.0;
 	public static final double DRIVE_FORWARD_SHOT_POWER = 0.56; 	// 3000 rpms on practice robot.
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2700.0;	// 3200 rpms on practice robot.
+	
+	public static final double BATTER_EDGE = 42.5;
+	
+	public static final double TARGET_RANGE[] = {
+			17.5 + BATTER_EDGE,
+		   	23.0 + BATTER_EDGE, 
+		   	28.5 + BATTER_EDGE, 
+		   	34.0 + BATTER_EDGE, 
+		   	39.5 + BATTER_EDGE,
+	};
+	
+	public static final double TARGET_WIDTH[] = {
+			300.0,
+			200.0,
+			150.0,
+			100.0,
+			 50.0,
+	};
+	
+	public static final double TARGET_SHOT_ANGLE[] = {
+			65.0,
+			50.0,
+			150.0,
+			100.0,
+			 50.0,
+	};
+	
+	public static final double TARGET_SHOT_RPMS[] = {
+			65.0,
+			50.0,
+			150.0,
+			100.0,
+			 50.0,
+	};
+	
+	public static final double TARGET_SHOT_POWER[] = {
+			65.0,
+			50.0,
+			150.0,
+			100.0,
+			 50.0,
+	};
+	
 
 	static String autoModeString = "DoNothing";
 	static int autoMode = 0;
@@ -101,10 +144,21 @@ public final class AutonomousController
 
 				if (robot.leftDriveEncoder.getDistance() > 150.0)
 				{
-					if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_POWER)
+					if (robot.useRPMs)
 					{
-						robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_POWER);
-						robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_POWER);
+						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
+						{
+							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
+							robot.rightShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
+						}
+					}
+					else
+					{
+						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_POWER)
+						{
+							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_POWER);
+							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_POWER);
+						}
 					}
 				}
 				
@@ -203,10 +257,21 @@ public final class AutonomousController
 				autoStep++;
 			}
 			
-			if (robot.leftShooterWheel.get() != LOW_GOAL_SHOT_POWER)
+			if (robot.useRPMs)
 			{
-				robot.leftShooterWheel.set(LOW_GOAL_SHOT_POWER);
-				robot.rightShooterWheel.set(-LOW_GOAL_SHOT_POWER);
+				if (robot.leftShooterWheel.get() != LOW_GOAL_SHOT_RPMS)
+				{
+					robot.leftShooterWheel.set(LOW_GOAL_SHOT_RPMS);
+					robot.rightShooterWheel.set(LOW_GOAL_SHOT_RPMS);
+				}
+			}
+			else
+			{
+				if (robot.leftShooterWheel.get() != LOW_GOAL_SHOT_POWER)
+				{
+					robot.leftShooterWheel.set(LOW_GOAL_SHOT_POWER);
+					robot.rightShooterWheel.set(-LOW_GOAL_SHOT_POWER);
+				}
 			}
 			
 			break;
@@ -365,10 +430,21 @@ public final class AutonomousController
 	 */
 	public static boolean shootBall(Robot robot, double rpms)
 	{
-		if (robot.rightShooterWheel.get() == 0.0)
+		if (robot.useRPMs)
 		{
-			robot.leftShooterWheel.set(1.0);
-			robot.rightShooterWheel.set(-1.0);
+			if (robot.leftShooterWheel.get() != rpms)
+			{
+				robot.leftShooterWheel.set(rpms);
+				robot.rightShooterWheel.set(rpms);
+			}
+		}
+		else
+		{
+			if (robot.leftShooterWheel.get() == 0.0)
+			{
+				robot.leftShooterWheel.set(1.0);
+				robot.rightShooterWheel.set(-1.0);
+			}
 		}
 		
 		if (robot.rightShooterWheel.getSpeed() >= rpms)
@@ -428,6 +504,64 @@ public final class AutonomousController
 	{
 		double result = 180.0;
 		
+		ImageTarget target = getTarget(robot);
+		
+		if (target != null)
+		{
+			// TODO: Calculate Target Angle.
+			GetImageSizeResult size = NIVision.imaqGetImageSize(robot.frame);
+			int offset = (size.width / 2) - target.X();
+								
+			if (offset > 3) {
+				result = -5.0;
+			}
+			else if (offset < -3) {
+				result = +5.0;
+			}
+			else {
+				result = 0.0;
+			}
+		}
+    	
+    	return result;
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 * @return
+	 */
+	public static double getTrackingRange(Robot robot)
+	{
+    	return getTrackingRange(getTarget(robot));
+	}
+	
+	/***
+	 * 
+	 * @param target
+	 * @return
+	 */
+	public static double getTrackingRange(ImageTarget target)
+	{
+		double result = 0.0;
+		
+		if (target != null)
+		{
+			result = TARGET_RANGE[0] + ((double)target.Width() * (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]) / (TARGET_WIDTH[TARGET_RANGE.length-1] - TARGET_WIDTH[0]));
+		}
+
+    	return result;
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 * @return
+	 */
+	public static ImageTarget getTarget(Robot robot)
+	{
+		ImageTarget result = null;
+
     	if (robot.camera != null)
     	{
 	    	NIVision.IMAQdxGrab(robot.session, robot.frame, 1);	// grab the raw image frame from the camera
@@ -438,8 +572,6 @@ public final class AutonomousController
 	    	
 	    	NIVision.imaqColorThreshold(robot.binaryFrame, robot.frame, 255, NIVision.ColorMode.RGB, robot.REFLECTIVE_RED_RANGE, robot.REFLECTIVE_GREEN_RANGE, robot.REFLECTIVE_BLUE_RANGE);
 	    	
-	    	//robot.camera.setImage(robot.binaryFrame);
-
 	    	//filter out small particles
 			float areaMin = (float)SmartDashboard.getNumber("Target Area Min %", 0.05);
 			robot.criteria[0].lower = areaMin;
@@ -455,7 +587,7 @@ public final class AutonomousController
 				Vector<ImageTarget> targets = new Vector<ImageTarget>();
 				for(int i = 0; i < numTargets; i++)
 				{
-					ImageTarget par = new ImageTarget(
+					ImageTarget target = new ImageTarget(
 							NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
 							NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
 							NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
@@ -465,9 +597,21 @@ public final class AutonomousController
 					//par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
 					//par.Area = NIVision.imaqMeasureParticle(robot.particalFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
 					
-					if (par.IsValidTarget())
+					if (target.IsValidTarget())
 					{
-						targets.add(par);
+						Rect rect = new Rect(target.Top, target.Left, target.Height(), target.Width());
+						if (targets.size() == 0)
+						{
+							NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
+							//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+						}
+						else
+						{
+							NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_BLACK, DrawMode.DRAW_VALUE, null);
+							//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+						}
+						
+						targets.add(target);
 					}
 				}
 				
@@ -477,50 +621,35 @@ public final class AutonomousController
 				{
 					targets.sort(null);
 					
-					ImageTarget target = targets.elementAt(0);
+					result = targets.elementAt(0);
 					
-					Rect rect = new Rect(target.Top, target.Left, target.Height(), target.Width());
-					//NIVision.imaqOverlayRect(frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
-					NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
-					
-					// TODO: Calculate Target Angle.
-					GetImageSizeResult size = NIVision.imaqGetImageSize(robot.frame);
-					int offset = (size.width / 2) - target.X();
-										
-					SmartDashboard.putNumber("Target X", target.X());
-					SmartDashboard.putNumber("Target Y", target.Y());
-					SmartDashboard.putNumber("Target Ratio", (double)target.Width() / (double)target.Height());
-					SmartDashboard.putNumber("Target Offset", offset);
-
-					if (offset > 3) {
-						result = -5.0;
-					}
-					else if (offset < -3) {
-						result = +5.0;
-					}
-					else {
-						result = 0.0;
-					}
+					SmartDashboard.putNumber("Target X", result.X());
+					SmartDashboard.putNumber("Target Y", result.Y());
+					SmartDashboard.putNumber("Target W", result.Width());
+					SmartDashboard.putNumber("Target H", result.Height());
+					SmartDashboard.putNumber("Target Ratio", (double)result.Width() / (double)result.Height());
 				}
-				else
-				{
-					SmartDashboard.putNumber("Target X", -1);
-					SmartDashboard.putNumber("Target Y", -1);
-					SmartDashboard.putNumber("Target Ratio", -1);
-					SmartDashboard.putNumber("Target Offset", -1);
-				}
-			}
-			else
-			{
-				SmartDashboard.putNumber("Target X", -1);
-				SmartDashboard.putNumber("Target Y", -1);
-				SmartDashboard.putNumber("Target Ratio", -1);
-				SmartDashboard.putNumber("Target Offset", -1);
 			}
 
 			SmartDashboard.putNumber("Target Count", numTargets);
     	}
+		
+    	if (result != null)
+    	{
+			SmartDashboard.putNumber("Target X", result.X());
+			SmartDashboard.putNumber("Target Y", result.Y());
+			SmartDashboard.putNumber("Target W", result.Width());
+			SmartDashboard.putNumber("Target H", result.Height());
+			SmartDashboard.putNumber("Target Ratio", (double)result.Width() / (double)result.Height());
+    	}
+    	else
+    	{
+			SmartDashboard.putNumber("Target X", -1);
+			SmartDashboard.putNumber("Target Y", -1);
+			SmartDashboard.putNumber("Target Ratio", -1);
+			SmartDashboard.putNumber("Target Offset", -1);
+    	}
     	
-    	return result;
+		return result;
 	}
 }

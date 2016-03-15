@@ -90,6 +90,8 @@ public class Robot extends IterativeRobot
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
+	boolean useRPMs = false;
+	
 	/**
 	 *	This function is called when the robot code is first launched 
 	 */
@@ -116,7 +118,17 @@ public class Robot extends IterativeRobot
         climberEncoder.reset();
 
         // Initialize CAN Shooter Motor Controllers
-        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
+        if (this.useRPMs)
+        {
+	        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Speed);
+	        rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.Speed);
+        }
+        else
+        {
+	        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);	
+	        rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
+        }
+        
         leftShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
         leftShooterWheel.reverseSensor(true);
         leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
@@ -127,7 +139,6 @@ public class Robot extends IterativeRobot
         leftShooterWheel.setI(0);
         leftShooterWheel.setD(0);
 
-        rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
         rightShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
         rightShooterWheel.reverseSensor(false);
         rightShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
@@ -481,15 +492,20 @@ public class Robot extends IterativeRobot
 	    	{
 	    		camera.setImage(frame);
 	    	}
-	    	else if (operatorstick.getPOV(0) == OperatorController.SHOW_IMAGE_FILTER_POV)
+	    	else if (leftstick.getRawButton(OperatorController.SHOW_TARGETS_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_TARGETS_BUTTON))
+    		{
+	    		AutonomousController.getTrackingAngle(this);
+	    		camera.setImage(frame);
+			}
+	    	else if (leftstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON))
     		{
 	    		AutonomousController.getTrackingAngle(this);
 	    		camera.setImage(binaryFrame);
 			}
 	    	else
 	    	{
-    			//NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
-	    		//camera.setImage(frame);
+    			NIVision.IMAQdxGrab(session, frame, 1);	// grab the raw image frame from the camera
+	    		camera.setImage(frame);
 	    	}
     	}
     }
