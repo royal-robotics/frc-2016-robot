@@ -338,7 +338,11 @@ public class Robot extends IterativeRobot
     		}
     		else
     		{
-    			AutonomousController.drivePivot(this, trackingAngle, 0.50);
+    			if (AutonomousController.drivePivot(this, trackingAngle, 0.50))
+    			{
+    				// this will cause the target image to update when we reach the target rotation
+    				AutonomousController.getTarget(this);
+    			}
     		}
     	}
     	else if (rightstick.getRawButton(OperatorController.DRIVE_STRAIGHT_BUTTON))
@@ -362,9 +366,10 @@ public class Robot extends IterativeRobot
     	}
     	else
     	{
-    		trackingAngle = 180.0;
+			trackingAngle = 180.0;
 			driveStraightToggle = false;
 			turnAroundToggle = false;
+			
 	    	if (arcadeMode) {
 	    		myDrive.arcadeDrive(leftstick);
 	    	}

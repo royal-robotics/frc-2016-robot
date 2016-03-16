@@ -47,13 +47,13 @@ public final class OperatorController
 	
 	public static final double CLIMB_ANGLE = 68.0;
 			
-	public static final double PICKUP_ANGLE = -12.0;		// degrees
+	public static final double PICKUP_ANGLE = -12.0;		// TODO: comp bot is -12, this is apparently to high for the practice bot
 	public static final double PICKUP_POWER = 0.45;
-	public static final double PICKUP_RPMS = 2000.0;		// TODO: not sure about this value
+	public static final double PICKUP_RPMS = 2000.0;		// 
 	
 	public static final double SPITOUT_ANGLE = -10.0;		// degrees
 	public static final double SPITOUT_POWER = 0.85;
-	public static final double SPITOUT_RPMS = 3500.0;		// TODO: not sure about this value
+	public static final double SPITOUT_RPMS = 3500.0;		// 
 	
 	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
 	public static final double WALL_SHOT_POWER = 0.438;
@@ -61,7 +61,7 @@ public final class OperatorController
 	
 	public static final double LIP_SHOT_ANGLE = 116.0;
 	public static final double LIP_SHOT_POWER = 0.507;
-	public static final double LIP_SHOT_RPMS = 3200.0;		// 3200 on comp bot
+	public static final double LIP_SHOT_RPMS = 2400.0;		// ??? 
 	
 	public static final double FIELD_SHOT_ANGLE = 60.0;
 	public static final double FIELD_SHOT_POWER = 0.56;
