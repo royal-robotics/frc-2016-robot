@@ -75,6 +75,7 @@ public class Robot extends IterativeRobot
 	boolean driveModeToggle = false;
 	boolean arcadeMode = false;
 	boolean shiftToggle = false;
+	double trackingAngle = 180.0;
 	boolean driveStraightToggle = false;
 	boolean turnAroundToggle = false;
 	
@@ -84,13 +85,13 @@ public class Robot extends IterativeRobot
     Image frame;
 	Image binaryFrame;
 	Image particalFrame;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 255);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 180);
 	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(220, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
-	boolean useRPMs = false;
+	boolean useRPMs = true;
 	
 	/**
 	 *	This function is called when the robot code is first launched 
@@ -134,7 +135,7 @@ public class Robot extends IterativeRobot
         leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         leftShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         leftShooterWheel.setProfile(0);
-        leftShooterWheel.setF(0.1);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
+        leftShooterWheel.setF(0.028098);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
         leftShooterWheel.setP(0);
         leftShooterWheel.setI(0);
         leftShooterWheel.setD(0);
@@ -144,7 +145,7 @@ public class Robot extends IterativeRobot
         rightShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         rightShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         rightShooterWheel.setProfile(0);
-        rightShooterWheel.setF(0.1);		// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
+        rightShooterWheel.setF(0.032948);		// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
         rightShooterWheel.setP(0);
         rightShooterWheel.setI(0);
         rightShooterWheel.setD(0);
@@ -202,6 +203,8 @@ public class Robot extends IterativeRobot
         SmartDashboard.putNumber("blue high", REFLECTIVE_BLUE_RANGE.maxValue);
 
         SmartDashboard.putNumber("Target Area Min %", 0.05);
+        SmartDashboard.putNumber("Target RPM", 2500.0);
+        SmartDashboard.putNumber("Target PWR", 0.5);
         
         updateDashboard();
 	}
@@ -329,7 +332,14 @@ public class Robot extends IterativeRobot
     	//
     	if (leftstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON) || rightstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON))
     	{
-    		AutonomousController.trackTarget(this);
+    		if (trackingAngle == 180.0)
+    		{
+    			trackingAngle = AutonomousController.driveGetBearing(this) - AutonomousController.getTrackingAngle(this);
+    		}
+    		else
+    		{
+    			AutonomousController.drivePivot(this, trackingAngle, 0.50);
+    		}
     	}
     	else if (rightstick.getRawButton(OperatorController.DRIVE_STRAIGHT_BUTTON))
     	{
@@ -352,6 +362,7 @@ public class Robot extends IterativeRobot
     	}
     	else
     	{
+    		trackingAngle = 180.0;
 			driveStraightToggle = false;
 			turnAroundToggle = false;
 	    	if (arcadeMode) {
@@ -474,12 +485,12 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putNumber("Arm Target", armController.getSetpoint());
     	SmartDashboard.putNumber("Arm Ctrl", armController.get());
     	SmartDashboard.putNumber("Arm Error", armController.getAvgError());
-    	SmartDashboard.putBoolean("Arm On Target", armController.onTarget());
+//    	SmartDashboard.putBoolean("Arm On Target", armController.onTarget());
 
     	SmartDashboard.putNumber("Arm Staight Volts", armController.fullyExtendedVoltage);
     	SmartDashboard.putNumber("Arm Home Volts", armController.homeVoltage);
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
-    	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
+//    	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
 
 //    	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
     }

@@ -1,7 +1,11 @@
 package org.usfirst.frc.team2522.robot;
 
+import java.io.IOException;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Joystick.AxisType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public final class OperatorController
 {
@@ -38,7 +42,7 @@ public final class OperatorController
 	public static final int SHOW_IMAGE_FILTER_BUTTON = 9;
 	
 	// Arm Angles used by various functions
-	public static final double MAX_RPMS = 5500.0;	// rpms
+	public static final double MAX_RPMS = 4500.0;	// rpms
 	public static final double MAX_POWER = 1.0;		// power scale
 	
 	public static final double CLIMB_ANGLE = 68.0;
@@ -49,7 +53,7 @@ public final class OperatorController
 	
 	public static final double SPITOUT_ANGLE = -10.0;		// degrees
 	public static final double SPITOUT_POWER = 0.85;
-	public static final double SPITOUT_RPMS = 4000.0;		// TODO: not sure about this value
+	public static final double SPITOUT_RPMS = 3500.0;		// TODO: not sure about this value
 	
 	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
 	public static final double WALL_SHOT_POWER = 0.438;
@@ -59,9 +63,9 @@ public final class OperatorController
 	public static final double LIP_SHOT_POWER = 0.507;
 	public static final double LIP_SHOT_RPMS = 3200.0;		// 3200 on comp bot
 	
-	public static final double FIELD_SHOT_ANGLE = 55.0;
+	public static final double FIELD_SHOT_ANGLE = 60.0;
 	public static final double FIELD_SHOT_POWER = 0.56;
-	public static final double FIELD_SHOT_RPMS = 3800.0;	// TODO: not sure about this value on comp bot
+	public static final double FIELD_SHOT_RPMS = 2500.0;	// Practice Bot Value
 	
 	// Toggle values used to control the various button states.
 	//
@@ -123,6 +127,13 @@ public final class OperatorController
 			pickupButtonToggle = false;
 		}
 	}
+
+	
+	static Timer pidControlTimer = new Timer();
+	static java.io.File f = null;
+	static java.io.BufferedWriter bw = null;
+	static java.util.Formatter fw = null;
+	
 	
 	/**
 	 * Operate the shooter arm.
@@ -142,6 +153,27 @@ public final class OperatorController
 		{
 			if(!operateArmButtonToggle)
 			{
+				try
+				{
+					f = new java.io.File("/home/lvuser/PIDValues.txt");
+					if (f.exists())
+					{
+						f.delete();
+					}
+					f.createNewFile();
+					bw = new java.io.BufferedWriter(new java.io.FileWriter(f));
+					fw = new java.util.Formatter(bw);
+					pidControlTimer.reset();
+					pidControlTimer.start();
+				}
+				catch(IOException e)
+				{
+					f = null;
+					bw = null;
+					fw = null;
+					e.printStackTrace();
+				}
+				
 				if (robot.operatorstick.getRawButton(WALL_SHOT_ANGLE_BUTTON)) {
 					robot.armController.setTargetAngle(WALL_SHOT_ANGLE);
 				}
@@ -159,6 +191,11 @@ public final class OperatorController
 				}
 				operateArmButtonToggle = true;	
 			}
+			
+			if (fw != null)
+			{
+				fw.format("%f, %f, %f %n", pidControlTimer.get(), robot.armAngle.pidGet(), robot.armController.getSetpoint());
+			}
 		}
 		else if (axisValue > 0.1 || axisValue < -0.1)
 		{
@@ -174,6 +211,20 @@ public final class OperatorController
 		{
 			robot.armController.setSetpoint(robot.armAngle.pidGet());
 			operateArmButtonToggle = false;
+			if (bw != null)
+			{
+				try {
+					bw.close();
+				}
+				catch(java.io.IOException e) {
+					e.printStackTrace();
+				}
+				finally {
+					f = null;
+					bw = null;
+					fw = null;
+				}
+			}
 		}
 	}
 	
@@ -261,13 +312,13 @@ public final class OperatorController
 			{
 				if (robot.useRPMs)
 				{
-					double speed = MAX_POWER * (robot.rightstick.getZ() + 1.0) / 2.0;
+					double speed = SmartDashboard.getNumber("Target RPM", 2500.0);
 					robot.leftShooterWheel.set(speed);
 					robot.rightShooterWheel.set(-speed);
 				}
 				else
 				{
-					double speed = MAX_RPMS * (robot.rightstick.getZ() + 1.0) / 2.0;
+					double speed = SmartDashboard.getNumber("Target PWR", 0.50);
 					robot.leftShooterWheel.set(speed);
 					robot.rightShooterWheel.set(speed);
 				}

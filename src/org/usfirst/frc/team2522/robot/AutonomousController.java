@@ -23,46 +23,56 @@ public final class AutonomousController
 	public static final double DRIVE_FORWARD_SHOT_POWER = 0.56; 	// 3000 rpms on practice robot.
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2700.0;	// 3200 rpms on practice robot.
 	
-	public static final double BATTER_EDGE = 42.5;
+	public static final double BATTER_EDGE = 48;
 	
 	public static final double TARGET_RANGE[] = {
-			17.5 + BATTER_EDGE,
-		   	23.0 + BATTER_EDGE, 
-		   	28.5 + BATTER_EDGE, 
-		   	34.0 + BATTER_EDGE, 
-		   	39.5 + BATTER_EDGE,
+			12.0 + BATTER_EDGE,
+		   	24.0 + BATTER_EDGE, 
+		   	36.0 + BATTER_EDGE, 
+		   	48.0 + BATTER_EDGE, 
+		   	60.0 + BATTER_EDGE,
+		   	72.0 + BATTER_EDGE,
 	};
 	
 	public static final double TARGET_WIDTH[] = {
-			300.0,
-			200.0,
-			150.0,
-			100.0,
-			 50.0,
+			144.0,
+			133.0,
+			122.0,
+			112.0,
+			102.0,
+			97.0,
 	};
 	
-	public static final double TARGET_SHOT_ANGLE[] = {
-			65.0,
-			50.0,
-			150.0,
-			100.0,
-			 50.0,
+	public static final double TARGET_RATIO[] = {
+			2.5,
+			2.0,
+			1.968,
+			1.867,
+			1.789,
+			1.732,
 	};
 	
 	public static final double TARGET_SHOT_RPMS[] = {
-			65.0,
-			50.0,
-			150.0,
-			100.0,
-			 50.0,
+			2500.0,
+			2500.0,
+			2500.0,
+			2500.0,
+			2500.0,
+	};
+	
+	public static final double TARGET_SHOT_ANGLE[] = {
+			60.0,
+			60.0,
+			60.0,
+			60.0,
+			60.0,
 	};
 	
 	public static final double TARGET_SHOT_POWER[] = {
-			65.0,
-			50.0,
-			150.0,
-			100.0,
-			 50.0,
+			0.52,
+			0.58,
+			0.60,
+			0.63,
 	};
 	
 
@@ -312,6 +322,17 @@ public final class AutonomousController
 		robot.mxp.reset();
 	}
 	
+	public static double driveGetBearing(Robot robot)
+	{
+		double bearing = robot.mxp.getAngle();
+		
+		if (bearing > 180.0) {
+			bearing -= 360.0;
+		}
+		
+		return bearing;
+	}
+	
 	public static void driveStop(Robot robot)
 	{
 		robot.myDrive.tankDrive(0.0, 0.0);
@@ -357,7 +378,13 @@ public final class AutonomousController
 	 */
 	public static boolean drivePivot(Robot robot, double bearing, double power)
 	{
-		double error = bearing - robot.mxp.getAngle();
+		double current = robot.mxp.getAngle();
+		if (current > 180.0) {
+			current -= 360.0;
+		}
+		
+		double error = bearing - current;
+
 		if (error > 180.0) {
 			error -= 360.0;
 		} else if (error < -180.0) {
@@ -473,8 +500,6 @@ public final class AutonomousController
 	 */
 	public static boolean trackTarget(Robot robot)
 	{
-		driveResetBearing(robot);
-		
 		double trackingAngle = getTrackingAngle(robot);
 		SmartDashboard.putNumber("Target Pivot", trackingAngle);
 		
@@ -484,7 +509,7 @@ public final class AutonomousController
 		}
 		else if (trackingAngle > 1.0 || trackingAngle < -1.0)
 		{
-			drivePivot(robot, trackingAngle, 0.48);
+			drivePivot(robot, driveGetBearing(robot) - trackingAngle, 0.43);
 		}
 		else
 		{
@@ -511,16 +536,15 @@ public final class AutonomousController
 			// TODO: Calculate Target Angle.
 			GetImageSizeResult size = NIVision.imaqGetImageSize(robot.frame);
 			int offset = (size.width / 2) - target.X();
+			SmartDashboard.putNumber("Target Offset PXL", offset);
 								
-			if (offset > 3) {
-				result = -5.0;
-			}
-			else if (offset < -3) {
-				result = +5.0;
-			}
-			else {
-				result = 0.0;
-			}
+			result = (double)offset * 15.0 / 140.0;
+			SmartDashboard.putNumber("Target Offset DEG", result);
+		}
+		else
+		{
+			SmartDashboard.putNumber("Target Offset PXL", -1);
+			SmartDashboard.putNumber("Target Offset DEG", 180.0);
 		}
     	
     	return result;
@@ -548,6 +572,11 @@ public final class AutonomousController
 		if (target != null)
 		{
 			result = TARGET_RANGE[0] + ((double)target.Width() * (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]) / (TARGET_WIDTH[TARGET_RANGE.length-1] - TARGET_WIDTH[0]));
+			SmartDashboard.putNumber("Target Range", result);
+		}
+		else
+		{
+			SmartDashboard.putNumber("Target Range", -1);
 		}
 
     	return result;
@@ -602,13 +631,13 @@ public final class AutonomousController
 						Rect rect = new Rect(target.Top, target.Left, target.Height(), target.Width());
 						if (targets.size() == 0)
 						{
-							NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
-							//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+							//NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
+							NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 						}
 						else
 						{
-							NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_BLACK, DrawMode.DRAW_VALUE, null);
-							//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+							//NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_BLACK, DrawMode.DRAW_VALUE, null);
+							NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 						}
 						
 						targets.add(target);
@@ -646,8 +675,9 @@ public final class AutonomousController
     	{
 			SmartDashboard.putNumber("Target X", -1);
 			SmartDashboard.putNumber("Target Y", -1);
+			SmartDashboard.putNumber("Target W", -1);
+			SmartDashboard.putNumber("Target H", -1);
 			SmartDashboard.putNumber("Target Ratio", -1);
-			SmartDashboard.putNumber("Target Offset", -1);
     	}
     	
 		return result;
