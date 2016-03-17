@@ -30,6 +30,9 @@ public class Robot extends IterativeRobot
 	VictorSP roller = new VictorSP(7);
 	VictorSP climber = new VictorSP(6);
 	
+	public static final double MAX_LEFT_SHOOTER_RPMS = 4500.0;	// used to scale RPMs to power on shooter motor
+	public static final double MAX_RIGHT_SHOOTER_RPMS = 4500.0;	// used to scale RPMs to power on shooter motor
+	
 	CANTalon leftShooterWheel = new CANTalon(0);
 	CANTalon rightShooterWheel = new CANTalon(1);
 		
@@ -75,7 +78,8 @@ public class Robot extends IterativeRobot
 	boolean driveModeToggle = false;
 	boolean arcadeMode = false;
 	boolean shiftToggle = false;
-	double trackingAngle = 180.0;
+	double trackingTargetAngle = 180.0;
+	boolean trackingToggle = false;
 	boolean driveStraightToggle = false;
 	boolean turnAroundToggle = false;
 	
@@ -91,7 +95,7 @@ public class Robot extends IterativeRobot
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
-	boolean useRPMs = true;
+	boolean useRPM = true;
 	
 	/**
 	 *	This function is called when the robot code is first launched 
@@ -119,7 +123,7 @@ public class Robot extends IterativeRobot
         climberEncoder.reset();
 
         // Initialize CAN Shooter Motor Controllers
-        if (this.useRPMs)
+        if (this.useRPM)
         {
 	        leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Speed);
 	        rightShooterWheel.changeControlMode(CANTalon.TalonControlMode.Speed);
@@ -131,7 +135,7 @@ public class Robot extends IterativeRobot
         }
         
         leftShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
-        leftShooterWheel.reverseSensor(true);
+        leftShooterWheel.reverseSensor(false);
         leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         leftShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         leftShooterWheel.setProfile(0);
@@ -215,10 +219,10 @@ public class Robot extends IterativeRobot
 	public void autonomousInit()
 	{
         // reset the gyro setting to zero before autonomous starts so that we have a fixed bearing.
-        AutonomousController.driveResetBearing(this);
+        resetBearing();
         
         // reset encoder distances for start of autonomous.
-        AutonomousController.driveResetEncoders(this);
+        resetDriveDistance();
 		
 		// enable arm controller
 		armController.enable();
@@ -235,12 +239,14 @@ public class Robot extends IterativeRobot
 		intake.set(DoubleSolenoid.Value.kReverse);
 		
 		// shooter wheels should not be moving
-		leftShooterWheel.set(0.0);
-		rightShooterWheel.set(0.0);
+		setShooterTargetRPM(0.0);
 		
 		// This is the last time getAutoMode() should be called during the autonomous phase.
 		AutonomousController.getAutoMode(this);
 		AutonomousController.autoStep = 0;
+		AutonomousController.trackingTargetAngle = 180.0;
+		AutonomousController.shotDelayTimer.stop();
+		AutonomousController.shotDelayTimer.reset();
 		
 		ballLoaded = true;	// we always start autonomous with a ball loaded.
 		
@@ -277,8 +283,7 @@ public class Robot extends IterativeRobot
 		intake.set(DoubleSolenoid.Value.kReverse);
 		
 		// shooter wheels should not be moving
-		leftShooterWheel.set(0.0);
-		rightShooterWheel.set(0.0);
+		setShooterTargetRPM(0.0);
 		
         updateDashboard();
     }
@@ -332,43 +337,64 @@ public class Robot extends IterativeRobot
     	//
     	if (leftstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON) || rightstick.getRawButton(OperatorController.TRACK_TARGET_BUTTON))
     	{
-    		if (trackingAngle == 180.0)
+    		if (!trackingToggle)
     		{
-    			trackingAngle = AutonomousController.driveGetBearing(this) - AutonomousController.getTrackingAngle(this);
+    			ImageTarget target = AutonomousController.getTarget(this);
+    			double range = AutonomousController.getTargetRange(target);
+    			double trackingAngle = AutonomousController.getTargetAngle(this, target);
+			
+    			if (target != null)
+    			{
+        			SmartDashboard.putNumber("Target RPM", AutonomousController.getShotRPMForRange(range));
+        			armController.setTargetAngle(AutonomousController.getArmAngleForRange(range));
+        			
+    				trackingTargetAngle = this.getBearing() + trackingAngle;
+	    			trackingToggle = true;
+    			}
+    			else
+    			{
+    	    		AutonomousController.driveStop(this);
+    			}
     		}
     		else
     		{
-    			if (AutonomousController.drivePivot(this, trackingAngle, 0.50))
-    			{
-    				// this will cause the target image to update when we reach the target rotation
-    				AutonomousController.getTarget(this);
-    			}
+				if (AutonomousController.drivePivot(this, trackingTargetAngle, 0.50))
+				{
+					AutonomousController.getTarget(this);	// this will cause the target image to update when we reach the target rotation
+				}
     		}
     	}
     	else if (rightstick.getRawButton(OperatorController.DRIVE_STRAIGHT_BUTTON))
     	{
     		if (!driveStraightToggle)
     		{
-    			AutonomousController.driveResetBearing(this);
+    			resetBearing();
     			driveStraightToggle = true;
     		}
-    		AutonomousController.driveResetEncoders(this);
+    		resetDriveDistance();
     		AutonomousController.driveForward(this, 0, 0.80, 15.0);
     	}
     	else if (rightstick.getRawButton(OperatorController.TURN_AROUND_BUTTON))
     	{
     		if (!turnAroundToggle)
     		{
-    			AutonomousController.driveResetBearing(this);
+    			resetBearing();
     			turnAroundToggle = true;
     		}
     		AutonomousController.driveTurnAround(this, 0.80);
     	}
     	else
     	{
-			trackingAngle = 180.0;
 			driveStraightToggle = false;
 			turnAroundToggle = false;
+
+			if (trackingToggle)
+    		{
+    			trackingToggle = false;
+				// this will cause the target image to update after releasing the tracking button
+				AutonomousController.getTarget(this);
+				camera.setImage(frame);
+    		}
 			
 	    	if (arcadeMode) {
 	    		myDrive.arcadeDrive(leftstick);
@@ -445,8 +471,70 @@ public class Robot extends IterativeRobot
     	return -1.0;
     }
     
+    public void setShooterTargetRPM(double rpms)
+    {
+    	if (this.useRPM)
+    	{
+			this.leftShooterWheel.set(rpms);
+			this.rightShooterWheel.set(-rpms);
+    	}
+    	else
+    	{
+    		this.leftShooterWheel.set(rpms / MAX_LEFT_SHOOTER_RPMS);
+			this.rightShooterWheel.set(-rpms / MAX_RIGHT_SHOOTER_RPMS);
+    	}
+    }
+    
+    public double getShooterTargetRPM()
+    {
+    	double result = 0.0;
+    	
+    	if (this.useRPM)
+    	{
+    		result = leftShooterWheel.get();
+    	}
+    	else
+    	{
+    		result = leftShooterWheel.get() * MAX_LEFT_SHOOTER_RPMS;
+    	}
+    	
+    	return result;
+    }
+    
+    public double getShooterRPM()
+    {
+    	return (leftShooterWheel.getSpeed() + rightShooterWheel.getSpeed()) / 2.0;
+    }
+    
+    public void resetBearing()
+    {
+    	this.mxp.reset();	
+    }
+    
+    public double getBearing()
+    {
+		double bearing = this.mxp.getAngle();
+		
+		if (bearing > 180.0) {
+			bearing -= 360.0;
+		}
+		
+		return bearing;
+    }
+    
+    public void resetDriveDistance()
+    {
+		this.leftDriveEncoder.reset();
+		this.rightDriveEncoder.reset();
+    }
+    
+    public double getDriveDistance()
+    {
+    	return this.leftDriveEncoder.getDistance();
+    }
+    
     /**
-     * All dashboard updating should be done here, so that the values are updated in all robot operation modes.
+     * All dash board updating should be done here, so that the values are updated in all robot operation modes.
      */
     public void updateDashboard()
     {
@@ -510,12 +598,12 @@ public class Robot extends IterativeRobot
 	    	}
 	    	else if (leftstick.getRawButton(OperatorController.SHOW_TARGETS_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_TARGETS_BUTTON))
     		{
-	    		AutonomousController.getTrackingAngle(this);
+	    		AutonomousController.getTargetAngle(this);
 	    		camera.setImage(frame);
 			}
 	    	else if (leftstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON))
     		{
-	    		AutonomousController.getTrackingAngle(this);
+	    		AutonomousController.getTargetAngle(this);
 	    		camera.setImage(binaryFrame);
 			}
 	    	else

@@ -17,11 +17,9 @@ public final class AutonomousController
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -20.0;	// degrees
 	
 	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees
-	public static final double LOW_GOAL_SHOT_POWER = 0.56;		// 
-	public static final double LOW_GOAL_SHOT_RPMS = 2700.0;		// practice bot value
+	public static final double LOW_BAR_SHOT_RPMS = 2700.0;		// practice bot value
 
 	public static final double DRIVE_FORWARD_SHOT_ANGLE = 60.0;		// degrees
-	public static final double DRIVE_FORWARD_SHOT_POWER = 0.56; 	// 
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2500.0;	// practice bot value
 	
 	public static final double BATTER_EDGE = 48;
@@ -52,10 +50,10 @@ public final class AutonomousController
 	
 	public static final double TARGET_SHOT_RPMS[] = {
 			2500.0,
-			2500.0,
-			2500.0,
-			2500.0,
-			2500.0,
+			2550.0,
+			2600.0,
+			2650.0,
+			2700.0,
 	};
 	
 	public static final double TARGET_SHOT_ANGLE[] = {
@@ -66,21 +64,13 @@ public final class AutonomousController
 			60.0,
 	};
 	
-	public static final double TARGET_SHOT_POWER[] = {
-			0.56,
-			0.56,
-			0.56,
-			0.56,
-			0.56,
-	};
-	
 
 	static String autoModeString = "DoNothing";
 	static int autoMode = 0;
 	static int autoStep = 0;
 	
 	static Timer shotDelayTimer = new Timer();
-	static double trackingAngle = 180.0;		
+	static double trackingTargetAngle = 180.0;		
 	
 
 	
@@ -144,6 +134,163 @@ public final class AutonomousController
 				break;
 		}
 	}
+
+	/***
+	 * 
+	 * @param robot
+	 */
+	public static void LowBarAndShootAuto(Robot robot)
+	{
+		switch(autoStep)
+		{
+			case 0:
+			{
+				if (robot.getDriveDistance() < 96.0)
+				{
+					armMove(robot, LOW_GOAL_TRAVERSE_ANGLE);
+				}
+				else
+				{
+					armMove(robot, LOW_GOAL_SHOT_ANGLE);
+				}
+				
+				if (driveForward(robot, 0.0, 0.75, 239.0))
+				{
+					autoStep++;
+				}
+			
+				break;
+			}
+			case 1:
+			{
+				if (robot.getShooterTargetRPM() != LOW_BAR_SHOT_RPMS)
+				{
+					robot.setShooterTargetRPM(LOW_BAR_SHOT_RPMS);
+				}
+				
+				if (drivePivot(robot, 67.0, 0.65))
+				{
+					autoStep++;
+				}
+	
+				break;
+			}
+			case 2:
+			{
+				if (armMove(robot, LOW_GOAL_SHOT_ANGLE))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 3:
+			{
+				if (trackTarget(robot))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 4:
+			{
+				if (shootBall(robot, LOW_BAR_SHOT_RPMS, 1.0))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 5:
+			{
+				if (armMove(robot, ArmController.HOME_ANGLE))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			default:
+			{
+				driveStop(robot);
+				break;
+			}
+		}
+	}
+
+	/***
+	 * 
+	 * @param robot
+	 */
+	public static void DriveForwardTurnRightAndShoot(Robot robot)
+	{
+		switch(autoStep)
+		{
+			case 0:
+			{
+				if (driveForward(robot, 0.0, 0.80, 170.0))
+				{
+					autoStep++;
+				}
+
+				if (robot.getDriveDistance() > 110.0)
+				{
+					armMove(robot, DRIVE_FORWARD_SHOT_ANGLE);
+				}
+
+				if (robot.getDriveDistance() > 160.0)
+				{
+					if (robot.getShooterTargetRPM() != DRIVE_FORWARD_SHOT_RPMS)
+					{
+						robot.setShooterTargetRPM(DRIVE_FORWARD_SHOT_RPMS);
+					}
+				}
+				
+				break;
+			}
+			case 1:
+			{
+				if (drivePivot(robot, 30.0, 0.65))
+				{
+					autoStep++;
+				}
+								
+				break;
+			}
+			case 2:
+			{
+				if (armMove(robot, DRIVE_FORWARD_SHOT_ANGLE))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 3:
+			{
+				if (trackTarget(robot))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 4:
+			{
+				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 5:
+			{
+				if (armMove(robot, ArmController.HOME_ANGLE))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			default:
+				driveStop(robot);
+				break;			
+		}
+	}
 	
 	/***
 	 * 
@@ -158,31 +305,18 @@ public final class AutonomousController
 				if (driveForward(robot, 0.0, 0.80, 170.0))
 				{
 					autoStep++;
-					trackingAngle = 180.0;	// reset tracking target before we start tracking
 				}
 
-				if (robot.leftDriveEncoder.getDistance() > 110.0)
+				if (robot.getDriveDistance() > 110.0)
 				{
 					armMove(robot, DRIVE_FORWARD_SHOT_ANGLE);
 				}
 
-				if (robot.leftDriveEncoder.getDistance() > 160.0)
+				if (robot.getDriveDistance() > 160.0)
 				{
-					if (robot.useRPMs)
+					if (robot.getShooterTargetRPM() != DRIVE_FORWARD_SHOT_RPMS)
 					{
-						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
-						{
-							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
-							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_RPMS);
-						}
-					}
-					else
-					{
-						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_POWER)
-						{
-							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_POWER);
-							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_POWER);
-						}
+						robot.setShooterTargetRPM(DRIVE_FORWARD_SHOT_RPMS);
 					}
 				}
 				
@@ -190,16 +324,31 @@ public final class AutonomousController
 			}
 			case 1:
 			{
-				if (trackTarget(robot))
+				if (armMove(robot, DRIVE_FORWARD_SHOT_ANGLE))
 				{
-					shotDelayTimer.reset();
 					autoStep++;
 				}
 				break;
 			}
 			case 2:
 			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 2.0))
+				if (trackTarget(robot))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 3:
+			{
+				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 4:
+			{
+				if (armMove(robot, ArmController.HOME_ANGLE))
 				{
 					autoStep++;
 				}
@@ -226,28 +375,16 @@ public final class AutonomousController
 					autoStep++;
 				}
 
-				if (robot.leftDriveEncoder.getDistance() > 110.0)
+				if (robot.getDriveDistance() > 110.0)
 				{
 					armMove(robot, DRIVE_FORWARD_SHOT_ANGLE);
 				}
 
-				if (robot.leftDriveEncoder.getDistance() > 160.0)
+				if (robot.getDriveDistance() > 160.0)
 				{
-					if (robot.useRPMs)
+					if (robot.getShooterTargetRPM() != DRIVE_FORWARD_SHOT_RPMS)
 					{
-						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
-						{
-							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
-							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_RPMS);
-						}
-					}
-					else
-					{
-						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_POWER)
-						{
-							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_POWER);
-							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_POWER);
-						}
+						robot.setShooterTargetRPM(DRIVE_FORWARD_SHOT_RPMS);
 					}
 				}
 				
@@ -258,23 +395,37 @@ public final class AutonomousController
 				if (drivePivot(robot, -30.0, 0.65))
 				{
 					autoStep++;
-					trackingAngle = 180.0;	// reset tracking target before we start tracking
 				}
 								
 				break;
 			}
 			case 2:
 			{
-				if (trackTarget(robot))
+				if (armMove(robot, DRIVE_FORWARD_SHOT_ANGLE))
 				{
-					shotDelayTimer.reset();
 					autoStep++;
 				}
 				break;
 			}
 			case 3:
 			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 2.0))
+				if (trackTarget(robot))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 4:
+			{
+				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 5:
+			{
+				if (armMove(robot, ArmController.HOME_ANGLE))
 				{
 					autoStep++;
 				}
@@ -285,180 +436,7 @@ public final class AutonomousController
 				break;			
 		}
 	}
-
-	/***
-	 * 
-	 * @param robot
-	 */
-	public static void DriveForwardTurnRightAndShoot(Robot robot)
-	{
-		switch(autoStep)
-		{
-			case 0:
-			{
-				if (driveForward(robot, 0.0, 0.80, 170.0))
-				{
-					autoStep++;
-				}
-
-				if (robot.leftDriveEncoder.getDistance() > 110.0)
-				{
-					armMove(robot, DRIVE_FORWARD_SHOT_ANGLE);
-				}
-
-				if (robot.leftDriveEncoder.getDistance() > 160.0)
-				{
-					if (robot.useRPMs)
-					{
-						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
-						{
-							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
-							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_RPMS);
-						}
-					}
-					else
-					{
-						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_POWER)
-						{
-							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_POWER);
-							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_POWER);
-						}
-					}
-				}
-				
-				break;
-			}
-			case 1:
-			{
-				if (drivePivot(robot, 30.0, 0.65))
-				{
-					autoStep++;
-					trackingAngle = 180.0;	// reset tracking target before we start tracking
-				}
-								
-				break;
-			}
-			case 2:
-			{
-				if (trackTarget(robot))
-				{
-					shotDelayTimer.reset();
-					autoStep++;
-				}
-				break;
-			}
-			case 3:
-			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 2.0))
-				{
-					autoStep++;
-				}
-				break;
-			}
-			default:
-				driveStop(robot);
-				break;			
-		}
-	}
-
-	/***
-	 * 
-	 * @param robot
-	 */
-	public static void LowBarAndShootAuto(Robot robot)
-	{
-		switch(autoStep)
-		{
-		case 0:
-		{
-			if (robot.leftDriveEncoder.getDistance() < 96.0)
-			{
-				armMove(robot, LOW_GOAL_TRAVERSE_ANGLE);
-			}
-			else
-			{
-				armMove(robot, LOW_GOAL_SHOT_ANGLE);
-			}
-			
-			if (driveForward(robot, 0.0, 0.75, 239.0))
-			{
-				autoStep++;
-			}
-		
-			break;
-		}
-		case 1:
-			if (drivePivot(robot, 67.0, 0.65))
-			{
-				autoStep++;
-				trackingAngle = 180.0;	// reset tracking target before we start tracking
-			}
-			
-			if (robot.useRPMs)
-			{
-				if (robot.leftShooterWheel.get() != LOW_GOAL_SHOT_RPMS)
-				{
-					robot.leftShooterWheel.set(LOW_GOAL_SHOT_RPMS);
-					robot.rightShooterWheel.set(-LOW_GOAL_SHOT_RPMS);
-				}
-			}
-			else
-			{
-				if (robot.leftShooterWheel.get() != LOW_GOAL_SHOT_POWER)
-				{
-					robot.leftShooterWheel.set(LOW_GOAL_SHOT_POWER);
-					robot.rightShooterWheel.set(-LOW_GOAL_SHOT_POWER);
-				}
-			}
-			
-			break;
-		case 2:
-			if (trackTarget(robot))
-			{
-				shotDelayTimer.reset();
-				autoStep++;
-			}
-			break;
-		case 3:
-			if (shootBall(robot, LOW_GOAL_SHOT_RPMS, 2.0))
-			{
-				autoStep++;
-			}
-			break;
-//		case 4:
-//			if (armMove(robot, ArmController.HOME_ANGLE))
-//			{
-//				autoStep++;
-//			}
-//			break;
-		default:
-			driveStop(robot);
-			break;
-	}
-	}
 	
-	
-	public static void driveResetEncoders(Robot robot)
-	{
-		robot.leftDriveEncoder.reset();
-		robot.rightDriveEncoder.reset();
-	}
-	
-	public static void driveResetBearing(Robot robot)
-	{
-		robot.mxp.reset();
-	}
-	
-	public static double driveGetBearing(Robot robot)
-	{
-		double bearing = robot.mxp.getAngle();
-		
-		if (bearing > 180.0) {
-			bearing -= 360.0;
-		}
-		
-		return bearing;
-	}
 	
 	public static void driveStop(Robot robot)
 	{
@@ -474,7 +452,7 @@ public final class AutonomousController
 	 */
 	public static boolean driveForward(Robot robot, double bearing, double speed, double distance)
 	{
-		if (robot.leftDriveEncoder.getDistance() >= distance)
+		if (robot.getDriveDistance() >= distance)
 		{
 			driveStop(robot);
 			return true;
@@ -505,7 +483,7 @@ public final class AutonomousController
 	 */
 	public static boolean drivePivot(Robot robot, double bearing, double power)
 	{
-		double error = bearing - driveGetBearing(robot);
+		double error = bearing - robot.getBearing();
 
 		if (error > 180.0) {
 			error -= 360.0;
@@ -568,8 +546,7 @@ public final class AutonomousController
 			robot.armController.setTargetAngle(targetAngle);
 		}
 		
-		//return robot.armController.onTarget();
-		return Math.abs(targetAngle - robot.armController.getAngle()) < 3.0;
+		return Math.abs(targetAngle - robot.armController.getAngle()) < 1.0;
 	}
 	
 	/***
@@ -583,21 +560,9 @@ public final class AutonomousController
 	 */
 	public static boolean shootBall(Robot robot, double rpms, double delay)
 	{
-		if (robot.useRPMs)
+		if (robot.getShooterTargetRPM() != rpms)
 		{
-			if (robot.leftShooterWheel.get() != rpms)
-			{
-				robot.leftShooterWheel.set(rpms);
-				robot.rightShooterWheel.set(-rpms);
-			}
-		}
-		else
-		{
-			if (robot.leftShooterWheel.get() == 0.0)
-			{
-				robot.leftShooterWheel.set(1.0 * (rpms / 4500.00));
-				robot.rightShooterWheel.set(-1.0 * (rpms / 4500.00));
-			}
+			robot.setShooterTargetRPM(rpms);
 		}
 		
 		if (shotDelayTimer.get() == 0)
@@ -609,7 +574,12 @@ public final class AutonomousController
 		{
 			robot.kicker.set(DoubleSolenoid.Value.kForward);
 			robot.ballLoaded = false;
-			return true;
+			
+			// wait 1/2 second after shot before returning true.
+			if (shotDelayTimer.get() > (delay + 0.5))
+			{
+				return true;
+			}
 		}
 		
 		return false;
@@ -623,21 +593,19 @@ public final class AutonomousController
 	 */
 	public static boolean trackTarget(Robot robot)
 	{
-		if (trackingAngle == 180.0)
+		if (trackingTargetAngle == 180.0)
 		{
-			driveStop(robot);
-			double temp = AutonomousController.getTrackingAngle(robot);
-			if (temp != 180.0)
+			double trackingAngle = AutonomousController.getTargetAngle(robot);
+			if (trackingAngle != 180.0)
 			{
-				trackingAngle = AutonomousController.driveGetBearing(robot) - temp;
+				trackingTargetAngle = robot.getBearing() + trackingAngle;
 			}
 		}
 		else
 		{
-			if (AutonomousController.drivePivot(robot, trackingAngle, 0.50))
+			if (AutonomousController.drivePivot(robot, trackingTargetAngle, 0.50))
 			{
-				trackingAngle = 180.0;
-				driveStop(robot);
+				trackingTargetAngle = 180.0;
 				return true;
 			}
 		}
@@ -650,26 +618,37 @@ public final class AutonomousController
 	 * @param robot
 	 * @return
 	 */
-	public static double getTrackingAngle(Robot robot)
+	public static double getTargetAngle(Robot robot)
+	{
+		return getTargetAngle(robot, getTarget(robot));
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 * @return
+	 */
+	public static double getTargetAngle(Robot robot, ImageTarget target)
 	{
 		double result = 180.0;
 		
-		ImageTarget target = getTarget(robot);
+		getTargetRange(target); // causes the Range value in the dash board to be updated.
 		
 		if (target != null)
 		{
 			GetImageSizeResult size = NIVision.imaqGetImageSize(robot.frame);
-			int offset = (size.width / 2) - target.X();
-			SmartDashboard.putNumber("Target Offset PXL", offset);
+			int offset = target.X() - (size.width / 2);
 								
 			// This ratio between degrees and pixels seems to work at field distances not sure how it will work up close.
 			//
 			result = (double)offset * 15.0 / 140.0;
+			
+			SmartDashboard.putNumber("Target Offset PXL", offset);
 			SmartDashboard.putNumber("Target Offset DEG", result);
 		}
 		else
 		{
-			SmartDashboard.putNumber("Target Offset PXL", -1);
+			SmartDashboard.putNumber("Target Offset PXL", 999.0);
 			SmartDashboard.putNumber("Target Offset DEG", 180.0);
 		}
     	
@@ -681,9 +660,9 @@ public final class AutonomousController
 	 * @param robot
 	 * @return
 	 */
-	public static double getTrackingRange(Robot robot)
+	public static double getTargetRange(Robot robot)
 	{
-    	return getTrackingRange(getTarget(robot));
+    	return getTargetRange(getTarget(robot));
 	}
 	
 	/***
@@ -691,7 +670,7 @@ public final class AutonomousController
 	 * @param target
 	 * @return
 	 */
-	public static double getTrackingRange(ImageTarget target)
+	public static double getTargetRange(ImageTarget target)
 	{
 		double result = 0.0;
 		
@@ -706,6 +685,32 @@ public final class AutonomousController
 		}
 
     	return result;
+	}
+	
+	/***
+	 * 
+	 * @param range
+	 * @return
+	 */
+	public static double getShotRPMForRange(double range)
+	{
+		double result = 2500.0;
+
+		result = range * (TARGET_SHOT_RPMS[TARGET_SHOT_RPMS.length-1] - TARGET_SHOT_RPMS[0]) / (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]);
+		
+		return result;
+	}
+	
+	/***
+	 * 
+	 * @param range
+	 * @return
+	 */
+	public static double getArmAngleForRange(double range)
+	{
+		double result = 60.0;
+		
+		return result;
 	}
 	
 	/***

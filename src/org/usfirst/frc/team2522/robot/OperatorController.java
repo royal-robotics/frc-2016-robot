@@ -1,6 +1,7 @@
 package org.usfirst.frc.team2522.robot;
 
 import java.io.IOException;
+import java.io.*;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Timer;
@@ -42,29 +43,21 @@ public final class OperatorController
 	public static final int SHOW_IMAGE_FILTER_BUTTON = 9;
 	
 	// Arm Angles used by various functions
-	public static final double MAX_RPMS = 4500.0;	// rpms
-	public static final double MAX_POWER = 1.0;		// power scale
-	
 	public static final double CLIMB_ANGLE = 68.0;
 			
 	public static final double PICKUP_ANGLE = -12.0;		// TODO: comp bot is -12, this is apparently to high for the practice bot
-	public static final double PICKUP_POWER = 0.45;
-	public static final double PICKUP_RPMS = 2000.0;		// 
+	public static final double PICKUP_RPMS = -2000.0;		// 
 	
 	public static final double SPITOUT_ANGLE = -10.0;		// degrees
-	public static final double SPITOUT_POWER = 0.85;
 	public static final double SPITOUT_RPMS = 3500.0;		// 
 	
 	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
-	public static final double WALL_SHOT_POWER = 0.438;
 	public static final double WALL_SHOT_RPMS = 2500.0;		// 2500 on comp bot
 	
 	public static final double LIP_SHOT_ANGLE = 116.0;
-	public static final double LIP_SHOT_POWER = 0.507;
 	public static final double LIP_SHOT_RPMS = 2400.0;		// ??? 
 	
 	public static final double FIELD_SHOT_ANGLE = 60.0;
-	public static final double FIELD_SHOT_POWER = 0.56;
 	public static final double FIELD_SHOT_RPMS = 2500.0;	// Practice Bot Value
 	
 	// Toggle values used to control the various button states.
@@ -73,6 +66,12 @@ public final class OperatorController
 	static boolean operateArmButtonToggle = false;
 	static boolean operateShooterButtonToggle = false;
 	static boolean climberLockButtonToggle = false;
+
+	// Used to output PID data for Arm for calibration purposes.
+	//
+	static PrintStream fw = null;
+	static Timer pidControlTimer = new Timer();
+	
 		
 	/**
 	 * Checks the robot l state and activates the pickup system accordingly.
@@ -129,11 +128,6 @@ public final class OperatorController
 	}
 
 	
-	static Timer pidControlTimer = new Timer();
-	static java.io.File f = null;
-	static java.io.BufferedWriter bw = null;
-	
-	
 	/**
 	 * Operate the shooter arm.
 	 * 
@@ -154,20 +148,14 @@ public final class OperatorController
 			{
 				try
 				{
-					f = new java.io.File("/home/lvuser/PIDValues.txt");
-					if (f.exists())
-					{
-						f.delete();
-					}
-					f.createNewFile();
-					bw = new java.io.BufferedWriter(new java.io.FileWriter(f));
+					fw = new PrintStream(new File("/home/lvuser/PIDValues.txt"));
 					pidControlTimer.reset();
 					pidControlTimer.start();
 				}
 				catch(IOException e)
 				{
-					f = null;
-					bw = null;					e.printStackTrace();
+					fw = null;
+					e.printStackTrace();
 				}
 				
 				if (robot.operatorstick.getRawButton(WALL_SHOT_ANGLE_BUTTON)) {
@@ -185,23 +173,14 @@ public final class OperatorController
 				else if (robot.operatorstick.getPOV(0) == CLIMBER_ANGLE_POV) {
 					robot.armController.setTargetAngle(CLIMB_ANGLE);
 				}
+				
 				operateArmButtonToggle = true;	
 			}
 			
-			if (bw != null)
+			if (fw != null)
 			{
-				try
-				{
-					bw.write(String.valueOf(pidControlTimer.get()));
-					bw.write(",");
-					bw.write(String.valueOf(robot.armAngle.pidGet()));
-					bw.write(",");
-					bw.write(String.valueOf(robot.armController.getSetpoint()));
-					bw.newLine();
-				}
-				catch(java.io.IOException e)
-				{
-				}
+				System.out.println(String.valueOf(pidControlTimer.get()) + "," + String.valueOf(robot.armAngle.pidGet()) + "," + String.valueOf(robot.armController.getSetpoint()));
+				fw.println(String.valueOf(pidControlTimer.get()) + "," + String.valueOf(robot.armAngle.pidGet()) + "," + String.valueOf(robot.armController.getSetpoint()));
 			}
 		}
 		else if (axisValue > 0.1 || axisValue < -0.1)
@@ -218,19 +197,11 @@ public final class OperatorController
 		{
 			robot.armController.setSetpoint(robot.armAngle.pidGet());
 			operateArmButtonToggle = false;
-			if (bw != null)
+			
+			if (fw != null)
 			{
-				try {
-					bw.flush();
-					bw.close();
-				}
-				catch(java.io.IOException e) {
-					e.printStackTrace();
-				}
-				finally {
-					f = null;
-					bw = null;
-				}
+				fw.close();
+				fw = null;
 			}
 		}
 	}
@@ -268,56 +239,32 @@ public final class OperatorController
 			// Set the shooter motor speed based on which button is selected.
 			//
 			if(robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON)) {
-				if (robot.useRPMs)
+				if (robot.getShooterTargetRPM() != WALL_SHOT_RPMS)
 				{
-					robot.leftShooterWheel.set(WALL_SHOT_RPMS);
-					robot.rightShooterWheel.set(-WALL_SHOT_RPMS);
-				}
-				else
-				{
-					robot.leftShooterWheel.set(WALL_SHOT_POWER);
-					robot.rightShooterWheel.set(-WALL_SHOT_POWER);
+					robot.setShooterTargetRPM(WALL_SHOT_RPMS);
 				}
 			}
 			else if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON)){
-				if (robot.useRPMs)
+				if (robot.getShooterTargetRPM() != LIP_SHOT_RPMS)
 				{
-					robot.leftShooterWheel.set(LIP_SHOT_RPMS);
-					robot.rightShooterWheel.set(-LIP_SHOT_RPMS);
-				}
-				else
-				{
-					robot.leftShooterWheel.set(LIP_SHOT_POWER);
-					robot.rightShooterWheel.set(-LIP_SHOT_POWER);
+					robot.setShooterTargetRPM(LIP_SHOT_RPMS);
 				}
 			}
 			else if (robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON)){
-				if (robot.useRPMs)
+				if (robot.getShooterTargetRPM() != FIELD_SHOT_RPMS)
 				{
-					robot.leftShooterWheel.set(FIELD_SHOT_RPMS);
-					robot.rightShooterWheel.set(-FIELD_SHOT_RPMS);
-				}
-				else
-				{
-					robot.leftShooterWheel.set(FIELD_SHOT_POWER);
-					robot.rightShooterWheel.set(-FIELD_SHOT_POWER);
+					robot.setShooterTargetRPM(FIELD_SHOT_RPMS);
 				}
 			}
 			else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)){
-				if (robot.useRPMs)
+				if (robot.getShooterTargetRPM() != SPITOUT_RPMS)
 				{
-					robot.leftShooterWheel.set(SPITOUT_RPMS);
-					robot.rightShooterWheel.set(-SPITOUT_RPMS);
-				}
-				else
-				{
-					robot.leftShooterWheel.set(SPITOUT_POWER);
-					robot.rightShooterWheel.set(-SPITOUT_POWER);
+					robot.setShooterTargetRPM(SPITOUT_RPMS);
 				}
 			}
 			else if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 			{
-				if (robot.useRPMs)
+				if (robot.useRPM)
 				{
 					double speed = SmartDashboard.getNumber("Target RPM", 2500.0);
 					robot.leftShooterWheel.set(speed);
@@ -325,9 +272,9 @@ public final class OperatorController
 				}
 				else
 				{
-					double speed = SmartDashboard.getNumber("Target PWR", 0.50);
-					robot.leftShooterWheel.set(speed);
-					robot.rightShooterWheel.set(-speed);
+					double power = SmartDashboard.getNumber("Target PWR", 0.50);
+					robot.leftShooterWheel.set(power);
+					robot.rightShooterWheel.set(-power);
 				}
 			}
 		}
@@ -336,24 +283,17 @@ public final class OperatorController
 			{
 				robot.kicker.set(DoubleSolenoid.Value.kReverse);
 				
-				if (robot.useRPMs)
+				if (robot.getShooterTargetRPM() != PICKUP_RPMS)
 				{
-					robot.leftShooterWheel.set(-PICKUP_RPMS);
-					robot.rightShooterWheel.set(PICKUP_RPMS);
-				}
-				else
-				{
-					robot.leftShooterWheel.set(-PICKUP_POWER);
-					robot.rightShooterWheel.set(PICKUP_POWER);
+					robot.setShooterTargetRPM(PICKUP_RPMS);
 				}
 				
 				operateShooterButtonToggle = true;
 			}
 		}
 		else if (operateShooterButtonToggle) {
+			robot.setShooterTargetRPM(0.0);
 			robot.kicker.set(DoubleSolenoid.Value.kReverse);
-			robot.leftShooterWheel.set(0);
-			robot.rightShooterWheel.set(0);
 			operateShooterButtonToggle = false;
 		}
 	}
