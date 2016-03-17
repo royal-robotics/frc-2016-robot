@@ -18,7 +18,7 @@ public final class AutonomousController
 	
 	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees
 	public static final double LOW_GOAL_SHOT_POWER = 0.56;		// 
-	public static final double LOW_GOAL_SHOT_RPMS = 2500.0;		// practice bot value
+	public static final double LOW_GOAL_SHOT_RPMS = 2700.0;		// practice bot value
 
 	public static final double DRIVE_FORWARD_SHOT_ANGLE = 60.0;		// degrees
 	public static final double DRIVE_FORWARD_SHOT_POWER = 0.56; 	// 
@@ -173,7 +173,7 @@ public final class AutonomousController
 						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
 						{
 							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
-							robot.rightShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
+							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_RPMS);
 						}
 					}
 					else
@@ -238,7 +238,7 @@ public final class AutonomousController
 						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
 						{
 							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
-							robot.rightShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
+							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_RPMS);
 						}
 					}
 					else
@@ -313,7 +313,7 @@ public final class AutonomousController
 						if (robot.leftShooterWheel.get() != DRIVE_FORWARD_SHOT_RPMS)
 						{
 							robot.leftShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
-							robot.rightShooterWheel.set(DRIVE_FORWARD_SHOT_RPMS);
+							robot.rightShooterWheel.set(-DRIVE_FORWARD_SHOT_RPMS);
 						}
 					}
 					else
@@ -399,7 +399,7 @@ public final class AutonomousController
 				if (robot.leftShooterWheel.get() != LOW_GOAL_SHOT_RPMS)
 				{
 					robot.leftShooterWheel.set(LOW_GOAL_SHOT_RPMS);
-					robot.rightShooterWheel.set(LOW_GOAL_SHOT_RPMS);
+					robot.rightShooterWheel.set(-LOW_GOAL_SHOT_RPMS);
 				}
 			}
 			else
@@ -425,12 +425,12 @@ public final class AutonomousController
 				autoStep++;
 			}
 			break;
-		case 4:
-			if (armMove(robot, ArmController.HOME_ANGLE))
-			{
-				autoStep++;
-			}
-			break;
+//		case 4:
+//			if (armMove(robot, ArmController.HOME_ANGLE))
+//			{
+//				autoStep++;
+//			}
+//			break;
 		default:
 			driveStop(robot);
 			break;
@@ -588,7 +588,7 @@ public final class AutonomousController
 			if (robot.leftShooterWheel.get() != rpms)
 			{
 				robot.leftShooterWheel.set(rpms);
-				robot.rightShooterWheel.set(rpms);
+				robot.rightShooterWheel.set(-rpms);
 			}
 		}
 		else
@@ -626,10 +626,13 @@ public final class AutonomousController
 		if (trackingAngle == 180.0)
 		{
 			driveStop(robot);
-			trackingAngle = AutonomousController.driveGetBearing(robot) - AutonomousController.getTrackingAngle(robot);
+			double temp = AutonomousController.getTrackingAngle(robot);
+			if (temp != 180.0)
+			{
+				trackingAngle = AutonomousController.driveGetBearing(robot) - temp;
+			}
 		}
-
-		if (trackingAngle != 180.0)
+		else
 		{
 			if (AutonomousController.drivePivot(robot, trackingAngle, 0.50))
 			{

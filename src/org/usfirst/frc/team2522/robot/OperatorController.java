@@ -132,7 +132,6 @@ public final class OperatorController
 	static Timer pidControlTimer = new Timer();
 	static java.io.File f = null;
 	static java.io.BufferedWriter bw = null;
-	static java.util.Formatter fw = null;
 	
 	
 	/**
@@ -162,16 +161,13 @@ public final class OperatorController
 					}
 					f.createNewFile();
 					bw = new java.io.BufferedWriter(new java.io.FileWriter(f));
-					fw = new java.util.Formatter(bw);
 					pidControlTimer.reset();
 					pidControlTimer.start();
 				}
 				catch(IOException e)
 				{
 					f = null;
-					bw = null;
-					fw = null;
-					e.printStackTrace();
+					bw = null;					e.printStackTrace();
 				}
 				
 				if (robot.operatorstick.getRawButton(WALL_SHOT_ANGLE_BUTTON)) {
@@ -192,9 +188,20 @@ public final class OperatorController
 				operateArmButtonToggle = true;	
 			}
 			
-			if (fw != null)
+			if (bw != null)
 			{
-				fw.format("%f, %f, %f %n", pidControlTimer.get(), robot.armAngle.pidGet(), robot.armController.getSetpoint());
+				try
+				{
+					bw.write(String.valueOf(pidControlTimer.get()));
+					bw.write(",");
+					bw.write(String.valueOf(robot.armAngle.pidGet()));
+					bw.write(",");
+					bw.write(String.valueOf(robot.armController.getSetpoint()));
+					bw.newLine();
+				}
+				catch(java.io.IOException e)
+				{
+				}
 			}
 		}
 		else if (axisValue > 0.1 || axisValue < -0.1)
@@ -214,6 +221,7 @@ public final class OperatorController
 			if (bw != null)
 			{
 				try {
+					bw.flush();
 					bw.close();
 				}
 				catch(java.io.IOException e) {
@@ -222,7 +230,6 @@ public final class OperatorController
 				finally {
 					f = null;
 					bw = null;
-					fw = null;
 				}
 			}
 		}
@@ -264,7 +271,7 @@ public final class OperatorController
 				if (robot.useRPMs)
 				{
 					robot.leftShooterWheel.set(WALL_SHOT_RPMS);
-					robot.rightShooterWheel.set(WALL_SHOT_RPMS);
+					robot.rightShooterWheel.set(-WALL_SHOT_RPMS);
 				}
 				else
 				{
@@ -276,7 +283,7 @@ public final class OperatorController
 				if (robot.useRPMs)
 				{
 					robot.leftShooterWheel.set(LIP_SHOT_RPMS);
-					robot.rightShooterWheel.set(LIP_SHOT_RPMS);
+					robot.rightShooterWheel.set(-LIP_SHOT_RPMS);
 				}
 				else
 				{
@@ -288,7 +295,7 @@ public final class OperatorController
 				if (robot.useRPMs)
 				{
 					robot.leftShooterWheel.set(FIELD_SHOT_RPMS);
-					robot.rightShooterWheel.set(FIELD_SHOT_RPMS);
+					robot.rightShooterWheel.set(-FIELD_SHOT_RPMS);
 				}
 				else
 				{
@@ -300,7 +307,7 @@ public final class OperatorController
 				if (robot.useRPMs)
 				{
 					robot.leftShooterWheel.set(SPITOUT_RPMS);
-					robot.rightShooterWheel.set(SPITOUT_RPMS);
+					robot.rightShooterWheel.set(-SPITOUT_RPMS);
 				}
 				else
 				{
@@ -320,7 +327,7 @@ public final class OperatorController
 				{
 					double speed = SmartDashboard.getNumber("Target PWR", 0.50);
 					robot.leftShooterWheel.set(speed);
-					robot.rightShooterWheel.set(speed);
+					robot.rightShooterWheel.set(-speed);
 				}
 			}
 		}
@@ -332,7 +339,7 @@ public final class OperatorController
 				if (robot.useRPMs)
 				{
 					robot.leftShooterWheel.set(-PICKUP_RPMS);
-					robot.rightShooterWheel.set(-PICKUP_RPMS);
+					robot.rightShooterWheel.set(PICKUP_RPMS);
 				}
 				else
 				{

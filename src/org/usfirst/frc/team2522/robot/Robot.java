@@ -85,8 +85,8 @@ public class Robot extends IterativeRobot
     Image frame;
 	Image binaryFrame;
 	Image particalFrame;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 180);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(220, 255);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 75);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(75, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
