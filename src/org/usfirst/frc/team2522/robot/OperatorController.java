@@ -45,7 +45,7 @@ public final class OperatorController
 	// Arm Angles used by various functions
 	public static final double CLIMB_ANGLE = 68.0;
 			
-	public static final double PICKUP_ANGLE = -12.0;		// TODO: comp bot is -12, this is apparently to high for the practice bot
+	public static final double PICKUP_ANGLE = -15.0;		// TODO: comp bot is -12, this is apparently to high for the practice bot
 	public static final double PICKUP_RPMS = -2000.0;		// 
 	
 	public static final double SPITOUT_ANGLE = -10.0;		// degrees

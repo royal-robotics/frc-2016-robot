@@ -10,10 +10,10 @@ public class ArmController extends PIDController
 
 	// Practice Robot Values
 	//
-	public static final double HOME_DEFAULT_VOLTAGE = 3.225; //Practice value
-	public static final double FLOOR_DEFAULT_VOLTAGE = 2.367;
-	public static final double HOME_ANGLE = 117.7;	// degrees
-	public static final double FLOOR_ANGLE = -48.9;			  
+	public static final double HOME_DEFAULT_VOLTAGE = 3.441; //Practice value
+	public static final double FLOOR_DEFAULT_VOLTAGE = 2.585;
+	public static final double HOME_ANGLE = 118;	// degrees
+	public static final double FLOOR_ANGLE = -48.5;			  
 
 	// Competition Robot Values
 	//

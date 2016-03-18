@@ -30,9 +30,6 @@ public class Robot extends IterativeRobot
 	VictorSP roller = new VictorSP(7);
 	VictorSP climber = new VictorSP(6);
 	
-	public static final double MAX_LEFT_SHOOTER_RPMS = 4500.0;	// used to scale RPMs to power on shooter motor
-	public static final double MAX_RIGHT_SHOOTER_RPMS = 4500.0;	// used to scale RPMs to power on shooter motor
-	
 	CANTalon leftShooterWheel = new CANTalon(0);
 	CANTalon rightShooterWheel = new CANTalon(1);
 		
@@ -95,6 +92,9 @@ public class Robot extends IterativeRobot
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
+	public static final double MAX_LEFT_SHOOTER_RPMS = 5100.0;	// used to scale RPMs to power on shooter motor
+	public static final double MAX_RIGHT_SHOOTER_RPMS = 4950.0;	// used to scale RPMs to power on shooter motor
+	
 	boolean useRPM = true;
 	
 	/**
@@ -135,24 +135,24 @@ public class Robot extends IterativeRobot
         }
         
         leftShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
-        leftShooterWheel.reverseSensor(false);
+        leftShooterWheel.reverseSensor(true);
         leftShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         leftShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         leftShooterWheel.setProfile(0);
-        leftShooterWheel.setF(0.028098);			// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
-        leftShooterWheel.setP(0);
-        leftShooterWheel.setI(0);
-        leftShooterWheel.setD(0);
-
+//        leftShooterWheel.setF(0.029);			// Calibration is stored in profile 0 on controller
+//        leftShooterWheel.setP(0);
+//        leftShooterWheel.setI(0);
+//        leftShooterWheel.setD(0);
+//
         rightShooterWheel.setFeedbackDevice(CANTalon.FeedbackDevice.CtreMagEncoder_Relative);
-        rightShooterWheel.reverseSensor(false);
+        rightShooterWheel.reverseSensor(true);
         rightShooterWheel.configNominalOutputVoltage(+0.0f, -0.0f);
         rightShooterWheel.configPeakOutputVoltage(+12.0f, -12.0f);
         rightShooterWheel.setProfile(0);
-        rightShooterWheel.setF(0.032948);		// TODO: calibrate the sensor to determine proper feed rate for RPM mapping
-        rightShooterWheel.setP(0);
-        rightShooterWheel.setI(0);
-        rightShooterWheel.setD(0);
+//        rightShooterWheel.setF(0.029);		// Calibration is stored in profile 0 on controller
+//        rightShooterWheel.setP(0);
+//        rightShooterWheel.setI(0);
+//        rightShooterWheel.setD(0);
 		
         //leftShooterWheel.reverseSensor(false);
 		//leftShooterWheel.changeControlMode(CANTalon.TalonControlMode.Follower);
