@@ -179,7 +179,7 @@ public class Robot extends IterativeRobot
         	//
         	// This is used for normal camera image updating to dashboard, but not used when doing image processing
         	//
-            //camera.startAutomaticCapture("cam0");
+            //camera.startAutomaticCapture("cam1");
             //camera = CameraServer.getInstance();
         	
     		session = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);

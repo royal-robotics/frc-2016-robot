@@ -1,8 +1,13 @@
 package org.usfirst.frc.team2522.robot;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
+import edu.wpi.first.wpilibj.Timer;
 
 
 public class ArmController extends PIDController
@@ -32,6 +37,11 @@ public class ArmController extends PIDController
 	double floorVoltage = FLOOR_DEFAULT_VOLTAGE;
 	double fullyExtendedVoltage = HOME_DEFAULT_VOLTAGE - (HOME_ANGLE * VOLTS_PER_DEGREE);
 	
+	// Used to output PID data for Arm for calibration purposes.
+	//
+	PrintStream fw = null;
+	Timer pidControlTimer = new Timer();
+	
 	PIDOutput armMotor;
 	PIDSource armSensor;
 	
@@ -43,6 +53,38 @@ public class ArmController extends PIDController
 		this.setOutputRange(-1 + MIN_POWER,  1.0 - MIN_POWER);
 		this.setInputRange(this.floorVoltage, this.homeVoltage);
 		this.setPercentTolerance(0.5);
+	}
+	
+	/***
+	 * 
+	 */
+	public void startTrace()
+	{
+		try
+		{
+			fw = new PrintStream(new File("/home/lvuser/ArmPIDValues.txt"));
+			pidControlTimer.reset();
+			pidControlTimer.start();
+		}
+		catch(IOException e)
+		{
+			fw = null;
+			e.printStackTrace();
+		}
+	}
+	
+	/***
+	 * 
+	 */
+	public void stopTrace()
+	{
+		if (fw != null)
+		{
+			pidControlTimer.stop();
+			pidControlTimer.reset();
+			fw.close();
+			fw = null;
+		}
 	}
 	
 	/**
@@ -111,6 +153,12 @@ public class ArmController extends PIDController
 			offset = MIN_POWER * Math.cos(this.getAngle() * RAIDIANS_PER_DEGREE);
 							
 			this.armMotor.pidWrite(-1.0 * (this.get() + offset));
+			
+			// If this is not null then tracing is enabled and we want to write values out to a file.
+			if (fw != null)
+			{
+				fw.println(String.valueOf(pidControlTimer.get()) + "," + String.valueOf(this.armSensor.pidGet()) + "," + String.valueOf(this.getSetpoint()));
+			}
 		}
 	}
 

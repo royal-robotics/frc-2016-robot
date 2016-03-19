@@ -721,6 +721,7 @@ public final class AutonomousController
 	public static ImageTarget getTarget(Robot robot)
 	{
 		ImageTarget result = null;
+		int numTargets = 0;
 
     	if (robot.camera != null)
     	{
@@ -736,7 +737,7 @@ public final class AutonomousController
 			float areaMin = (float)SmartDashboard.getNumber("Target Area Min %", 0.05);
 			robot.criteria[0].lower = areaMin;
 			
-			int numTargets = NIVision.imaqParticleFilter4(robot.particalFrame, robot.binaryFrame, robot.criteria, robot.filterOptions, null);
+			numTargets = NIVision.imaqParticleFilter4(robot.particalFrame, robot.binaryFrame, robot.criteria, robot.filterOptions, null);
 
 			SmartDashboard.putNumber("Target Candidates", numTargets);
 
@@ -754,45 +755,50 @@ public final class AutonomousController
 							NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT)
 						);
 
-					//par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
-					//par.Area = NIVision.imaqMeasureParticle(robot.particalFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
+					target.PercentAreaToImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
+					target.ImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_AREA);
 					
 					if (target.IsValidTarget())
 					{
-						Rect rect = new Rect(target.Top, target.Left, target.Height(), target.Width());
-						if (targets.size() == 0)
-						{
-							//NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
-							NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
-						}
-						else
-						{
-							//NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_BLACK, DrawMode.DRAW_VALUE, null);
-							NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
-						}
-						
 						targets.add(target);
 					}
 				}
 				
 				numTargets = targets.size();
-
+				
 				if (targets.size() > 0)
 				{
 					targets.sort(null);
-					
 					result = targets.elementAt(0);
-					
-					SmartDashboard.putNumber("Target X", result.X());
-					SmartDashboard.putNumber("Target Y", result.Y());
-					SmartDashboard.putNumber("Target W", result.Width());
-					SmartDashboard.putNumber("Target H", result.Height());
-					SmartDashboard.putNumber("Target Ratio", (double)result.Width() / (double)result.Height());
 				}
-			}
 
-			SmartDashboard.putNumber("Target Count", numTargets);
+				for(int i = 0; i < targets.size(); i++)
+				{
+					ImageTarget target = targets.elementAt(i);
+					Rect rect = new Rect(target.Top, target.Left, target.Height(), target.Width());
+					Rect rect2 = new Rect(target.Top+1, target.Left+1, target.Height()-2, target.Width()-2);
+					if (i == 0)
+					{
+						NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
+						NIVision.imaqOverlayRect(robot.frame, rect2, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
+						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect2, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+					}
+					else
+					{
+						NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_YELLOW, DrawMode.DRAW_VALUE, null);
+						NIVision.imaqOverlayRect(robot.frame, rect2, NIVision.RGB_YELLOW, DrawMode.DRAW_VALUE, null);
+						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect2, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+					}
+				}
+				
+				NIVision.imaqMergeOverlay(robot.frame, robot.frame, null, null);
+				
+			}
     	}
+		
+		SmartDashboard.putNumber("Target Count", numTargets);
 		
     	if (result != null)
     	{
@@ -801,6 +807,8 @@ public final class AutonomousController
 			SmartDashboard.putNumber("Target W", result.Width());
 			SmartDashboard.putNumber("Target H", result.Height());
 			SmartDashboard.putNumber("Target Ratio", (double)result.Width() / (double)result.Height());
+			SmartDashboard.putNumber("Target Area", result.PercentAreaToImageArea);
+			SmartDashboard.putNumber("Target % Area", result.PercentAreaToImageArea);
     	}
     	else
     	{
@@ -809,6 +817,8 @@ public final class AutonomousController
 			SmartDashboard.putNumber("Target W", -1);
 			SmartDashboard.putNumber("Target H", -1);
 			SmartDashboard.putNumber("Target Ratio", -1);
+			SmartDashboard.putNumber("Target Area", -1);
+			SmartDashboard.putNumber("Target % Area", -1);
     	}
     	
 		return result;

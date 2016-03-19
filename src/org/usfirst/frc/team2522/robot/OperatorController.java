@@ -1,10 +1,6 @@
 package org.usfirst.frc.team2522.robot;
 
-import java.io.IOException;
-import java.io.*;
-
 import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Joystick.AxisType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -65,13 +61,7 @@ public final class OperatorController
 	static boolean pickupButtonToggle = false;
 	static boolean operateArmButtonToggle = false;
 	static boolean operateShooterButtonToggle = false;
-	static boolean climberLockButtonToggle = false;
-
-	// Used to output PID data for Arm for calibration purposes.
-	//
-	static PrintStream fw = null;
-	static Timer pidControlTimer = new Timer();
-	
+	static boolean climberLockButtonToggle = false;	
 		
 	/**
 	 * Checks the robot l state and activates the pickup system accordingly.
@@ -146,17 +136,7 @@ public final class OperatorController
 		{
 			if(!operateArmButtonToggle)
 			{
-				try
-				{
-					fw = new PrintStream(new File("/home/lvuser/PIDValues.txt"));
-					pidControlTimer.reset();
-					pidControlTimer.start();
-				}
-				catch(IOException e)
-				{
-					fw = null;
-					e.printStackTrace();
-				}
+				robot.armController.startTrace();
 				
 				if (robot.operatorstick.getRawButton(WALL_SHOT_ANGLE_BUTTON)) {
 					robot.armController.setTargetAngle(WALL_SHOT_ANGLE);
@@ -176,12 +156,6 @@ public final class OperatorController
 				
 				operateArmButtonToggle = true;	
 			}
-			
-			if (fw != null)
-			{
-				System.out.println(String.valueOf(pidControlTimer.get()) + "," + String.valueOf(robot.armAngle.pidGet()) + "," + String.valueOf(robot.armController.getSetpoint()));
-				fw.println(String.valueOf(pidControlTimer.get()) + "," + String.valueOf(robot.armAngle.pidGet()) + "," + String.valueOf(robot.armController.getSetpoint()));
-			}
 		}
 		else if (axisValue > 0.1 || axisValue < -0.1)
 		{
@@ -195,14 +169,9 @@ public final class OperatorController
 		}
 		else if (operateArmButtonToggle)
 		{
+			robot.armController.stopTrace();
 			robot.armController.setSetpoint(robot.armAngle.pidGet());
 			operateArmButtonToggle = false;
-			
-			if (fw != null)
-			{
-				fw.close();
-				fw = null;
-			}
 		}
 	}
 	
