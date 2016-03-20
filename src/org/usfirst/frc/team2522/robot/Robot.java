@@ -7,6 +7,7 @@ import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
 
 import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -22,7 +23,10 @@ public class Robot extends IterativeRobot
 {
 	// Gyro / Accelerometer sensor //
 	AHRS mxp = new AHRS(SPI.Port.kMXP);
+	
 
+//	SPI spiBus = 
+	
 	// Motor controllers //
 	VictorSP leftDrive = new VictorSP(1);
 	VictorSP rightDrive = new VictorSP(5);
@@ -86,8 +90,8 @@ public class Robot extends IterativeRobot
     Image frame;
 	Image binaryFrame;
 	Image particalFrame;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 75);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(75, 255);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 120);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(130, 255);
 	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);

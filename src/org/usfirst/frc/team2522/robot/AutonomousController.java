@@ -5,6 +5,7 @@ import java.util.Vector;
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.DrawMode;
 import com.ni.vision.NIVision.GetImageSizeResult;
+import com.ni.vision.NIVision.RGBValue;
 import com.ni.vision.NIVision.Rect;
 import com.ni.vision.NIVision.ShapeMode;
 
@@ -17,10 +18,10 @@ public final class AutonomousController
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -20.0;	// degrees
 	
 	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees
-	public static final double LOW_BAR_SHOT_RPMS = 2700.0;		// practice bot value
+	public static final double LOW_BAR_SHOT_RPMS = 2600.0;		// practice bot value
 
 	public static final double DRIVE_FORWARD_SHOT_ANGLE = 60.0;		// degrees
-	public static final double DRIVE_FORWARD_SHOT_RPMS = 2500.0;	// practice bot value
+	public static final double DRIVE_FORWARD_SHOT_RPMS = 2600.0;	// practice bot value
 	
 	public static final double BATTER_EDGE = 48;
 	
@@ -82,22 +83,27 @@ public final class AutonomousController
 	public static int getAutoMode(Robot robot)
 	{
 		double value = (robot.leftstick.getZ() + 1.0);
-		double increment = 2.0 / 5.0;
+		double increment = 2.0 / 6.0;
 		
-		if (value >= (4.0 * increment))
+		if (value >= (5.0 * increment))
 		{
 			autoMode = 0;
 			autoModeString = "DoNothing";
 		}
+		else if  (value >= 4.0 * increment)
+		{
+			autoMode = 5;
+			autoModeString = "P5: DriveForwardTurnLeftAndShoot";
+		}
 		else if  (value >= 3.0 * increment)
 		{
 			autoMode = 4;
-			autoModeString = "P5: DriveForwardTurnLeftAndShoot";
+			autoModeString = "P4: DriveForwardAndShoot";
 		}
 		else if  (value >= 2.0 * increment)
 		{
 			autoMode = 3;
-			autoModeString = "P3-4: DriveForwardAndShoot";
+			autoModeString = "P3: DriveForwardTurnRightAndShoot";
 		}
 		else if  (value >= 1.0 * increment)
 		{
@@ -118,16 +124,19 @@ public final class AutonomousController
 		switch(autoMode)
 		{
 			case 1:
-				LowBarAndShootAuto(robot);
+				P1LowBarAndShootAuto(robot);
 				break;
 			case 2:
-				DriveForwardTurnRightAndShoot(robot);
+				P2DriveForwardTurnRightAndShoot(robot);
 				break;
 			case 3:
-				DriveForwardAndShootAuto(robot);
+				P3DriveForwardTurnRightAndShoot(robot);
 				break;
 			case 4:
-				DriveForwardTurnLeftAndShoot(robot);
+				P4DriveForwardAndShootAuto(robot);
+				break;
+			case 5:
+				P5DriveForwardTurnLeftAndShoot(robot);
 				break;
 			default:
 				driveStop(robot);
@@ -139,7 +148,7 @@ public final class AutonomousController
 	 * 
 	 * @param robot
 	 */
-	public static void LowBarAndShootAuto(Robot robot)
+	public static void P1LowBarAndShootAuto(Robot robot)
 	{
 		switch(autoStep)
 		{
@@ -219,13 +228,13 @@ public final class AutonomousController
 	 * 
 	 * @param robot
 	 */
-	public static void DriveForwardTurnRightAndShoot(Robot robot)
+	public static void P2DriveForwardTurnRightAndShoot(Robot robot)
 	{
 		switch(autoStep)
 		{
 			case 0:
 			{
-				if (driveForward(robot, 0.0, 0.80, 170.0))
+				if (driveForward(robot, 0.0, 0.80, 210.0))
 				{
 					autoStep++;
 				}
@@ -291,12 +300,12 @@ public final class AutonomousController
 				break;			
 		}
 	}
-	
+
 	/***
 	 * 
 	 * @param robot
 	 */
-	public static void DriveForwardAndShootAuto(Robot robot)
+	public static void P3DriveForwardTurnRightAndShoot(Robot robot)
 	{
 		switch(autoStep)
 		{
@@ -308,6 +317,83 @@ public final class AutonomousController
 				}
 
 				if (robot.getDriveDistance() > 110.0)
+				{
+					armMove(robot, DRIVE_FORWARD_SHOT_ANGLE);
+				}
+
+				if (robot.getDriveDistance() > 160.0)
+				{
+					if (robot.getShooterTargetRPM() != DRIVE_FORWARD_SHOT_RPMS)
+					{
+						robot.setShooterTargetRPM(DRIVE_FORWARD_SHOT_RPMS);
+					}
+				}
+				
+				break;
+			}
+			case 1:
+			{
+				if (drivePivot(robot, 20.0, 0.65))
+				{
+					autoStep++;
+				}
+								
+				break;
+			}
+			case 2:
+			{
+				if (armMove(robot, DRIVE_FORWARD_SHOT_ANGLE))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 3:
+			{
+				if (trackTarget(robot))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 4:
+			{
+				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 5:
+			{
+				if (armMove(robot, ArmController.HOME_ANGLE))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			default:
+				driveStop(robot);
+				break;			
+		}
+	}
+	
+	/***
+	 * 
+	 * @param robot
+	 */
+	public static void P4DriveForwardAndShootAuto(Robot robot)
+	{
+		switch(autoStep)
+		{
+			case 0:
+			{
+				if (driveForward(robot, 0.0, 0.80, 170.0))
+				{
+					autoStep++;
+				}
+
+				if (robot.getDriveDistance() > 130.0)
 				{
 					armMove(robot, DRIVE_FORWARD_SHOT_ANGLE);
 				}
@@ -364,13 +450,13 @@ public final class AutonomousController
 	 * 
 	 * @param robot
 	 */
-	public static void DriveForwardTurnLeftAndShoot(Robot robot)
+	public static void P5DriveForwardTurnLeftAndShoot(Robot robot)
 	{
 		switch(autoStep)
 		{
 			case 0:
 			{
-				if (driveForward(robot, 0.0, 0.80, 170.0))
+				if (driveForward(robot, 0.0, 0.80, 210.0))
 				{
 					autoStep++;
 				}
@@ -676,7 +762,8 @@ public final class AutonomousController
 		
 		if (target != null)
 		{
-			result = TARGET_RANGE[0] + ((double)target.Width() * (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]) / (TARGET_WIDTH[TARGET_RANGE.length-1] - TARGET_WIDTH[0]));
+			result = target.Width() * -0.75 + 127;
+//			result = TARGET_RANGE[0] + ((double)target.Width() * (TARGET_RANGE[0] - TARGET_RANGE[TARGET_RANGE.length-1]) / (TARGET_WIDTH[TARGET_RANGE.length-1] - TARGET_WIDTH[0]));
 			SmartDashboard.putNumber("Target Range", result);
 		}
 		else
@@ -696,7 +783,8 @@ public final class AutonomousController
 	{
 		double result = 2500.0;
 
-		result = range * (TARGET_SHOT_RPMS[TARGET_SHOT_RPMS.length-1] - TARGET_SHOT_RPMS[0]) / (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]);
+		result = 3.0 * range + 2500;
+		//result = range * (TARGET_SHOT_RPMS[TARGET_SHOT_RPMS.length-1] - TARGET_SHOT_RPMS[0]) / (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]);
 		
 		return result;
 	}
@@ -793,7 +881,8 @@ public final class AutonomousController
 					}
 				}
 				
-				NIVision.imaqMergeOverlay(robot.frame, robot.frame, null, null);
+				RGBValue[] palette = {};
+				NIVision.imaqMergeOverlay(robot.frame, robot.frame, palette , null);
 				
 			}
     	}
