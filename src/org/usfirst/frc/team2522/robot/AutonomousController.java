@@ -17,10 +17,10 @@ public final class AutonomousController
 {
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -20.0;	// degrees
 	
-	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees
+	public static final double LOW_GOAL_SHOT_ANGLE = 56.0;		// degrees (should be 60)
 	public static final double LOW_BAR_SHOT_RPMS = 2600.0;		// practice bot value
 
-	public static final double DRIVE_FORWARD_SHOT_ANGLE = 60.0;		// degrees
+	public static final double DRIVE_FORWARD_SHOT_ANGLE = 56.0;		// degrees (should be 60)
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2600.0;	// practice bot value
 	
 	public static final double BATTER_EDGE = 48;
@@ -202,7 +202,7 @@ public final class AutonomousController
 			}
 			case 4:
 			{
-				if (shootBall(robot, LOW_BAR_SHOT_RPMS, 1.0))
+				if (shootBall(robot, SmartDashboard.getNumber("Target RPM"), 1.0))
 				{
 					autoStep++;
 				}
@@ -281,7 +281,7 @@ public final class AutonomousController
 			}
 			case 4:
 			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				if (shootBall(robot, SmartDashboard.getNumber("Target RPM"), 1.0))
 				{
 					autoStep++;
 				}
@@ -358,7 +358,7 @@ public final class AutonomousController
 			}
 			case 4:
 			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				if (shootBall(robot, SmartDashboard.getNumber("Target RPM"), 1.0))
 				{
 					autoStep++;
 				}
@@ -426,7 +426,7 @@ public final class AutonomousController
 			}
 			case 3:
 			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				if (shootBall(robot, SmartDashboard.getNumber("Target RPM"), 1.0))
 				{
 					autoStep++;
 				}
@@ -503,7 +503,7 @@ public final class AutonomousController
 			}
 			case 4:
 			{
-				if (shootBall(robot, DRIVE_FORWARD_SHOT_RPMS, 1.0))
+				if (shootBall(robot, SmartDashboard.getNumber("Target RPM"), 1.0))
 				{
 					autoStep++;
 				}
@@ -638,8 +638,7 @@ public final class AutonomousController
 	/***
 	 * 
 	 * Fire the robot shooter after setting the shooter motors to the specified RPMs and waiting the specified delay in seconds.
-	 * 
-	 * @param robot	The robot shooting.
+	 * 	 * @param robot	The robot shooting.
 	 * @param rpms	RPMS to set shooter wheels to.
 	 * @param delay	Delay in seconds before shot is fired
 	 * @return
@@ -681,9 +680,15 @@ public final class AutonomousController
 	{
 		if (trackingTargetAngle == 180.0)
 		{
-			double trackingAngle = AutonomousController.getTargetAngle(robot);
-			if (trackingAngle != 180.0)
+			ImageTarget target = AutonomousController.getTarget(robot);
+			double trackingAngle = AutonomousController.getTargetAngle(robot, target);
+			double range = AutonomousController.getTargetRange(target);
+
+			if (target != null)
 			{
+    			SmartDashboard.putNumber("Target RPM", AutonomousController.getShotRPMForRange(range));
+    			robot.armController.setTargetAngle(AutonomousController.getArmAngleForRange(range));
+    			
 				trackingTargetAngle = robot.getBearing() + trackingAngle;
 			}
 		}
@@ -762,8 +767,8 @@ public final class AutonomousController
 		
 		if (target != null)
 		{
-			result = target.Width() * -0.75 + 127;
-//			result = TARGET_RANGE[0] + ((double)target.Width() * (TARGET_RANGE[0] - TARGET_RANGE[TARGET_RANGE.length-1]) / (TARGET_WIDTH[TARGET_RANGE.length-1] - TARGET_WIDTH[0]));
+			result = -0.9126 * target.Width() + 225.4;
+			//result = -6.227  * target.Height() + 456.2;
 			SmartDashboard.putNumber("Target Range", result);
 		}
 		else
@@ -783,7 +788,8 @@ public final class AutonomousController
 	{
 		double result = 2500.0;
 
-		result = 3.0 * range + 2500;
+// calc		result = 2.818 * range + 2269.0;
+		result = 2.818 * range + 2200.0;
 		//result = range * (TARGET_SHOT_RPMS[TARGET_SHOT_RPMS.length-1] - TARGET_SHOT_RPMS[0]) / (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]);
 		
 		return result;
@@ -797,6 +803,8 @@ public final class AutonomousController
 	public static double getArmAngleForRange(double range)
 	{
 		double result = 60.0;
+		
+		result = -0.2049 * range + 79.55;
 		
 		return result;
 	}

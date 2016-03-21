@@ -7,7 +7,7 @@ import com.ni.vision.NIVision.Image;
 import com.ni.vision.NIVision.ImageType;
 
 import edu.wpi.first.wpilibj.*;
-import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -24,9 +24,9 @@ public class Robot extends IterativeRobot
 	// Gyro / Accelerometer sensor //
 	AHRS mxp = new AHRS(SPI.Port.kMXP);
 	
+	Accelerometer accel;
+	ADXRS450_Gyro gyro = null;
 
-//	SPI spiBus = 
-	
 	// Motor controllers //
 	VictorSP leftDrive = new VictorSP(1);
 	VictorSP rightDrive = new VictorSP(5);
@@ -202,6 +202,10 @@ public class Robot extends IterativeRobot
         {
         	System.out.println(e.toString());
         }
+        
+        accel = new ADXL345_SPI(SPI.Port.kOnboardCS1, Accelerometer.Range.k4G);
+//        accel = new FRCAccl(SPI.Port.kOnboardCS1, Accelerometer.Range.k4G);
+        //gyro = new ADXRS450_Gyro();
 
         SmartDashboard.putNumber("red low", REFLECTIVE_RED_RANGE.minValue);
         SmartDashboard.putNumber("red high", REFLECTIVE_RED_RANGE.maxValue);
@@ -589,6 +593,16 @@ public class Robot extends IterativeRobot
     	SmartDashboard.putNumber("Arm Floor Volts", armController.floorVoltage);
 //    	SmartDashboard.putNumber("Arm Home Angle", (armController.homeVoltage - armController.fullyExtendedVoltage) / ArmController.VOLTS_PER_DEGREE);
 
+    	SmartDashboard.putNumber("Accel X", accel.getX());
+    	SmartDashboard.putNumber("Accel Y", accel.getY());
+    	SmartDashboard.putNumber("Accel Z", accel.getZ());
+    	if (gyro != null) {
+    		SmartDashboard.putNumber("FRC Gyro", gyro.getAngle());
+    	}
+    	else {
+        	SmartDashboard.putNumber("FRC Gyro", 0.0);
+    	}
+    	
 //    	SmartDashboard.putBoolean("Arm Home", shooterHomeSwitch.get());
     }
     

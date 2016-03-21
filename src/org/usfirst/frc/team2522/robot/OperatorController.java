@@ -84,7 +84,8 @@ public final class OperatorController
 		}
 
 		if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
-			robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||
+				robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||
+				robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON) ||
 			robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON))
 		{
 			if (!pickupButtonToggle)
