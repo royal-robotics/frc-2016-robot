@@ -44,7 +44,7 @@ public final class OperatorController
 	public static final double PICKUP_ANGLE = -25.0;		// TODO: comp bot is -15, this is apparently to high for the practice bot
 	public static final double PICKUP_RPMS = -2000.0;		// 
 	
-	public static final double SPITOUT_ANGLE = -20.0;		// degrees -10 comp bot
+	public static final double SPITOUT_ANGLE = -20.0;		// TODO: degrees -10 comp bot
 	public static final double SPITOUT_RPMS = 3500.0;		// 
 	
 	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
@@ -53,7 +53,7 @@ public final class OperatorController
 	public static final double LIP_SHOT_ANGLE = 116.0;
 	public static final double LIP_SHOT_RPMS = 2400.0;		// ??? 
 	
-	public static final double FIELD_SHOT_ANGLE = 56.0;  // TODO: should be 60
+	public static final double FIELD_SHOT_ANGLE = 55.0;  // TODO: should be 60
 	public static final double FIELD_SHOT_RPMS = 2500.0;	// Practice Bot Value
 	
 	// Toggle values used to control the various button states.
