@@ -854,7 +854,7 @@ public final class AutonomousController
 					target.PercentAreaToImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
 					target.ImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_AREA);
 					
-					if (target.IsValidTarget())
+					if (target.IsValidTarget(robot.binaryFrame))
 					{
 						targets.add(target);
 					}
