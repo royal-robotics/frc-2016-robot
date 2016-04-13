@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public final class OperatorController
 {
 	// Operator Stick Buttons
-	public static final int FIELD_SHOT_SPEED_BUTTON = 1;
+	public static final int INTAKE_ACTIVE_BUTTON = 1;
 	public static final int INTAKE_BUTTON = 2;
 	public static final int FIELD_SHOT_ANGLE_BUTTON = 3;
 	public static final int ZAXIS_SHOT_SPEED_BUTTON = 4;
@@ -33,18 +33,21 @@ public final class OperatorController
 	public static final int TOGGLE_SHIFTER_BUTTON = 1;
 	public static final int TRACK_TARGET_BUTTON = 2;
 	public static final int DRIVE_MODE_CHANGE_BUTTON = 3;	// left stick
-	public static final int TURN_AROUND_BUTTON = 3;			// right stick
-	public static final int DRIVE_STRAIGHT_BUTTON = 4;
+	public static final int TURN_AROUND_LEFT_BUTTON = 4;	// right stick
+	public static final int TURN_AROUND_RIGHT_BUTTON = 5;	// right stick
+	public static final int DRIVE_STRAIGHT_BUTTON = 3;		// right stick
 	public static final int SHOW_TARGETS_BUTTON = 8;		
 	public static final int SHOW_IMAGE_FILTER_BUTTON = 9;
 	
 	// Arm Angles used by various functions
-	public static final double CLIMB_ANGLE = 68.0;
+	public static final double CLIMB_ANGLE = 51.0;
 			
-	public static final double PICKUP_ANGLE = -25.0;		// TODO: comp bot is -15, this is apparently to high for the practice bot
+	public static final double INTAKE_RPMS = -3000.0;		// 
+
+	public static final double PICKUP_ANGLE = -20.0;		// TODO: comp bot is -15, this is apparently to high for the practice bot
 	public static final double PICKUP_RPMS = -2000.0;		// 
 	
-	public static final double SPITOUT_ANGLE = -20.0;		// TODO: degrees -10 comp bot
+	public static final double SPITOUT_ANGLE = -10.0;		// TODO: degrees -10 comp bot
 	public static final double SPITOUT_RPMS = 3500.0;		// 
 	
 	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
@@ -53,7 +56,7 @@ public final class OperatorController
 	public static final double LIP_SHOT_ANGLE = 116.0;
 	public static final double LIP_SHOT_RPMS = 2400.0;		// ??? 
 	
-	public static final double FIELD_SHOT_ANGLE = 55.0;  // TODO: should be 60
+	public static final double FIELD_SHOT_ANGLE = 60.0;  // TODO: should be 60
 	public static final double FIELD_SHOT_RPMS = 2500.0;	// Practice Bot Value
 	
 	// Toggle values used to control the various button states.
@@ -82,11 +85,14 @@ public final class OperatorController
 		{
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
 		}
+		else if (robot.operatorstick.getPOV(0) == CLIMBER_ANGLE_POV)
+		{
+			robot.intake.set(DoubleSolenoid.Value.kForward);
+		}
 
 		if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
-				robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||
-				robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON) ||
-			robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON))
+			robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||
+			robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
 		{
 			if (!pickupButtonToggle)
 			{
@@ -95,7 +101,7 @@ public final class OperatorController
 				pickupButtonToggle = true;
 			}
 		}
-		else if(robot.operatorstick.getRawButton(PICKUP_BUTTON)) {
+		else if(robot.operatorstick.getRawButton(PICKUP_BUTTON) || (robot.operatorstick.getRawButton(INTAKE_ACTIVE_BUTTON))) {
 			if (!pickupButtonToggle)
 			{
 				robot.roller.set(-0.5);
@@ -186,7 +192,6 @@ public final class OperatorController
 		if(robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
 		   robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) || 
 		   robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON) ||
-		   robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON) ||
 		   robot.operatorstick.getRawButton(SPITOUT_BUTTON))
 		{
 			if (!operateShooterButtonToggle)
@@ -220,12 +225,6 @@ public final class OperatorController
 					robot.setShooterTargetRPM(LIP_SHOT_RPMS);
 				}
 			}
-			else if (robot.operatorstick.getRawButton(FIELD_SHOT_SPEED_BUTTON)){
-				if (robot.getShooterTargetRPM() != FIELD_SHOT_RPMS)
-				{
-					robot.setShooterTargetRPM(FIELD_SHOT_RPMS);
-				}
-			}
 			else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)){
 				if (robot.getShooterTargetRPM() != SPITOUT_RPMS)
 				{
@@ -248,7 +247,8 @@ public final class OperatorController
 				}
 			}
 		}
-		else if (robot.operatorstick.getRawButton(PICKUP_BUTTON) || robot.operatorstick.getRawButton(INTAKE_BUTTON)) {
+		else if (robot.operatorstick.getRawButton(PICKUP_BUTTON) || robot.operatorstick.getRawButton(INTAKE_ACTIVE_BUTTON))
+		{
 			if (!operateShooterButtonToggle)
 			{
 				robot.kicker.set(DoubleSolenoid.Value.kReverse);
@@ -261,7 +261,22 @@ public final class OperatorController
 				operateShooterButtonToggle = true;
 			}
 		}
-		else if (operateShooterButtonToggle) {
+		else if (robot.operatorstick.getRawButton(INTAKE_BUTTON))
+		{
+			if (!operateShooterButtonToggle)
+			{
+				robot.kicker.set(DoubleSolenoid.Value.kReverse);
+				
+				if (robot.getShooterTargetRPM() != INTAKE_RPMS)
+				{
+					robot.setShooterTargetRPM(INTAKE_RPMS);
+				}
+				
+				operateShooterButtonToggle = true;
+			}
+		}
+		else if (operateShooterButtonToggle)
+		{
 			robot.setShooterTargetRPM(0.0);
 			robot.kicker.set(DoubleSolenoid.Value.kReverse);
 			operateShooterButtonToggle = false;

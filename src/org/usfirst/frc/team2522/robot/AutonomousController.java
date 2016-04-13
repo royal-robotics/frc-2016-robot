@@ -17,10 +17,10 @@ public final class AutonomousController
 {
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -20.0;	// degrees
 	
-	public static final double LOW_GOAL_SHOT_ANGLE = 56.0;		// degrees (should be 60)
+	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees (should be 60)
 	public static final double LOW_BAR_SHOT_RPMS = 2600.0;		// practice bot value
 
-	public static final double DRIVE_FORWARD_SHOT_ANGLE = 56.0;		// degrees (should be 60)
+	public static final double DRIVE_FORWARD_SHOT_ANGLE = 60.0;		// degrees (should be 60)
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2600.0;	// practice bot value
 	
 	public static final double BATTER_EDGE = 48;
@@ -604,7 +604,7 @@ public final class AutonomousController
 	 * @param power The drive motor power to use
 	 * @return True if we have reached the desired heading, otherwise false.
 	 */
-	public static boolean driveTurnAround(Robot robot, double power)
+	public static boolean driveTurnAroundRight(Robot robot, double power)
 	{
 		double bearing = robot.mxp.getAngle();
 		
@@ -616,6 +616,29 @@ public final class AutonomousController
 		else
 		{
 			robot.myDrive.tankDrive(-power, +power);
+			return false;
+		}
+	}
+	
+	/***
+	 * Turn the robot to the right until a bearing of 180.0 has been reached.
+	 * 
+	 * @param robot	The robot being pivoted
+	 * @param power The drive motor power to use
+	 * @return True if we have reached the desired heading, otherwise false.
+	 */
+	public static boolean driveTurnAroundLeft(Robot robot, double power)
+	{
+		double bearing = robot.mxp.getAngle();
+		
+		if (bearing < 180.0 && bearing > 90.0)
+		{
+			driveStop(robot);
+			return true;
+		}
+		else
+		{
+			robot.myDrive.tankDrive(+power, -power);
 			return false;
 		}
 	}
@@ -804,7 +827,8 @@ public final class AutonomousController
 	{
 		double result = 60.0;
 		
-		result = -0.2049 * range + 79.55;
+		//result = -0.2049 * range + 79.55;
+		result = -0.18 * range + 79.55;
 		
 		return result;
 	}
