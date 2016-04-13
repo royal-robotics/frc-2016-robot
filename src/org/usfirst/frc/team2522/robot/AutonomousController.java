@@ -860,6 +860,7 @@ public final class AutonomousController
 			numTargets = NIVision.imaqParticleFilter4(robot.particalFrame, robot.binaryFrame, robot.criteria, robot.filterOptions, null);
 
 			SmartDashboard.putNumber("Target Candidates", numTargets);
+			
 
 			if(numTargets > 0)
 			{
