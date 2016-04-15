@@ -37,6 +37,7 @@ public final class OperatorController
 	public static final int TURN_AROUND_LEFT_BUTTON = 4;	// right stick
 	public static final int TURN_AROUND_RIGHT_BUTTON = 5;	// right stick
 	public static final int DRIVE_STRAIGHT_BUTTON = 3;		// right stick
+	public static final int SHOW_IMAGE_DIFF_BUTTON = 7;		
 	public static final int SHOW_TARGETS_BUTTON = 8;		
 	public static final int SHOW_IMAGE_FILTER_BUTTON = 9;
 	

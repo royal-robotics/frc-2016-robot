@@ -20,6 +20,7 @@ public class ImageTarget implements Comparator<ImageTarget>, Comparable<ImageTar
 
 	double ImageArea;
 	double PercentAreaToImageArea;
+	double ImageEqAspectRatio;
 	
 	public ImageTarget(double top, double left, double bottom, double right)
 	{

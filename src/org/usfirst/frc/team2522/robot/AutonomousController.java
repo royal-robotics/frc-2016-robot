@@ -10,6 +10,7 @@ import com.ni.vision.NIVision.Rect;
 import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Relay.Value;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -885,12 +886,26 @@ public final class AutonomousController
     	if (robot.camera != null)
     	{
 	    	NIVision.IMAQdxGrab(robot.session, robot.frame, 1);	// grab the raw image frame from the camera
+	    	
+	    	robot.ledlights.set(Value.kForward);
+
+	    	try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	    	
+	    	NIVision.IMAQdxGrab(robot.session, robot.frame2, 1);	// grab the raw image frame from the camera
+	    	
+	    	robot.ledlights.set(Value.kOff);
+	    	
+	    	NIVision.imaqSubtract(robot.diff, robot.frame2, robot.frame);
 
     		robot.REFLECTIVE_RED_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("red low"), (int)SmartDashboard.getNumber("red high"));
     		robot.REFLECTIVE_GREEN_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("green low"), (int)SmartDashboard.getNumber("green high"));
     		robot.REFLECTIVE_BLUE_RANGE = new NIVision.Range((int)SmartDashboard.getNumber("blue low"), (int)SmartDashboard.getNumber("blue high"));
 	    	
-	    	NIVision.imaqColorThreshold(robot.binaryFrame, robot.frame, 255, NIVision.ColorMode.RGB, robot.REFLECTIVE_RED_RANGE, robot.REFLECTIVE_GREEN_RANGE, robot.REFLECTIVE_BLUE_RANGE);
+	    	NIVision.imaqColorThreshold(robot.binaryFrame, robot.diff, 255, NIVision.ColorMode.RGB, robot.REFLECTIVE_RED_RANGE, robot.REFLECTIVE_GREEN_RANGE, robot.REFLECTIVE_BLUE_RANGE);
 	    	
 	    	//filter out small particles
 			float areaMin = (float)SmartDashboard.getNumber("Target Area Min %", 0.05);
@@ -917,6 +932,7 @@ public final class AutonomousController
 
 					target.PercentAreaToImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
 					target.ImageArea = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_AREA);
+					target.ImageEqAspectRatio = NIVision.imaqMeasureParticle(robot.particalFrame, i, 0, NIVision.MeasurementType.MT_RATIO_OF_EQUIVALENT_RECT_SIDES);
 					
 					if (target.IsValidTarget(robot.binaryFrame))
 					{
@@ -941,21 +957,16 @@ public final class AutonomousController
 					{
 						NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
 						NIVision.imaqOverlayRect(robot.frame, rect2, NIVision.RGB_RED, DrawMode.DRAW_VALUE, null);
-						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
-						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect2, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					}
 					else
 					{
 						NIVision.imaqOverlayRect(robot.frame, rect, NIVision.RGB_YELLOW, DrawMode.DRAW_VALUE, null);
 						NIVision.imaqOverlayRect(robot.frame, rect2, NIVision.RGB_YELLOW, DrawMode.DRAW_VALUE, null);
-						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
-						//NIVision.imaqDrawShapeOnImage(robot.frame, robot.frame, rect2, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					}
 				}
 				
 				RGBValue[] palette = {};
 				NIVision.imaqMergeOverlay(robot.frame, robot.frame, palette , null);
-				
 			}
     	}
 		
@@ -968,7 +979,8 @@ public final class AutonomousController
 			SmartDashboard.putNumber("Target W", result.Width());
 			SmartDashboard.putNumber("Target H", result.Height());
 			SmartDashboard.putNumber("Target Ratio", (double)result.Width() / (double)result.Height());
-			SmartDashboard.putNumber("Target Area", result.PercentAreaToImageArea);
+			SmartDashboard.putNumber("Target Equ Ratio", result.ImageEqAspectRatio);
+			SmartDashboard.putNumber("Target Area", result.ImageArea);
 			SmartDashboard.putNumber("Target % Area", result.PercentAreaToImageArea);
     	}
     	else
@@ -978,6 +990,7 @@ public final class AutonomousController
 			SmartDashboard.putNumber("Target W", -1);
 			SmartDashboard.putNumber("Target H", -1);
 			SmartDashboard.putNumber("Target Ratio", -1);
+			SmartDashboard.putNumber("Target Equ Ratio", -1);
 			SmartDashboard.putNumber("Target Area", -1);
 			SmartDashboard.putNumber("Target % Area", -1);
     	}

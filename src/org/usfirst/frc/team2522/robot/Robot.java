@@ -92,6 +92,8 @@ public class Robot extends IterativeRobot
 	CameraServer camera;
 	int session = -1;
     Image frame;
+    Image frame2;
+    Image diff;
 	Image binaryFrame;
 	Image particalFrame;
 	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 252);
@@ -196,6 +198,8 @@ public class Robot extends IterativeRobot
             
             // Create image objects
             frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
+            frame2 = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
+            diff = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
     		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
     		particalFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
     		
@@ -360,7 +364,7 @@ public class Robot extends IterativeRobot
 	    		{
 	    			ImageTarget target = AutonomousController.getTarget(this);
 	    			double range = AutonomousController.getTargetRange(target);
-	    			double trackingAngle = AutonomousController.getTargetAngle(this, target) - 1.5;
+	    			double trackingAngle = AutonomousController.getTargetAngle(this, target);
 				
 	    			if (target != null)
 	    			{
@@ -421,9 +425,6 @@ public class Robot extends IterativeRobot
     		{
     			trackingToggle = false;
     			trackingDone = false;
-				// this will cause the target image to update after releasing the tracking button
-				AutonomousController.getTarget(this);
-				camera.setImage(frame);
     		}
 			
 	    	if (arcadeMode) {
@@ -640,6 +641,11 @@ public class Robot extends IterativeRobot
     		{
 	    		AutonomousController.getTargetAngle(this);
 	    		camera.setImage(frame);
+			}
+	    	else if (leftstick.getRawButton(OperatorController.SHOW_IMAGE_DIFF_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_IMAGE_DIFF_BUTTON))
+    		{
+	    		AutonomousController.getTargetAngle(this);
+	    		camera.setImage(diff);
 			}
 	    	else if (leftstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON))
     		{
