@@ -1,6 +1,7 @@
 package org.usfirst.frc.team2522.robot;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.Joystick.AxisType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -10,9 +11,9 @@ public final class OperatorController
 	public static final int INTAKE_ACTIVE_BUTTON = 1;
 	public static final int INTAKE_BUTTON = 2;
 	public static final int FIELD_SHOT_ANGLE_BUTTON = 3;
-	public static final int ZAXIS_SHOT_SPEED_BUTTON = 4;
+	public static final int RPM_SHOT_SPEED_BUTTON = 4;
 	public static final int PICKUP_BUTTON = 5;
-	public static final int LIP_SHOT_SPEED_BUTTON = 6;
+	public static final int SPOTLIGHT_BUTTON = 6;
 	public static final int SPITOUT_BUTTON = 7;
 	public static final int SHOOT_BUTTON = 8;
 	public static final int WALL_SHOT_ANGLE_BUTTON = 9;
@@ -44,20 +45,17 @@ public final class OperatorController
 			
 	public static final double INTAKE_RPMS = -3000.0;		// 
 
-	public static final double PICKUP_ANGLE = -20.0;		// TODO: comp bot is -15, this is apparently to high for the practice bot
+	public static final double PICKUP_ANGLE = -20.0;		//
 	public static final double PICKUP_RPMS = -2000.0;		// 
 	
-	public static final double SPITOUT_ANGLE = -10.0;		// TODO: degrees -10 comp bot
-	public static final double SPITOUT_RPMS = 3500.0;		// 
+	public static final double SPITOUT_ANGLE = -10.0;		//
+	public static final double SPITOUT_RPMS = 1850.0;		// 
 	
-	public static final double WALL_SHOT_ANGLE = 104.0;		// degrees
-	public static final double WALL_SHOT_RPMS = 2500.0;		// 2500 on comp bot
+	public static final double WALL_SHOT_ANGLE = 102.5;		// 
+	public static final double WALL_SHOT_RPMS = 2400.0;		// 
 	
-	public static final double LIP_SHOT_ANGLE = 116.0;
-	public static final double LIP_SHOT_RPMS = 2400.0;		// ??? 
-	
-	public static final double FIELD_SHOT_ANGLE = 60.0;  // TODO: should be 60
-	public static final double FIELD_SHOT_RPMS = 2500.0;	// Practice Bot Value
+	public static final double FIELD_SHOT_ANGLE = 64.0;		// TODO: should be 60 value of 64 to adapt with current PID
+	public static final double FIELD_SHOT_RPMS = 2500.0;	// 
 	
 	// Toggle values used to control the various button states.
 	//
@@ -65,6 +63,7 @@ public final class OperatorController
 	static boolean operateArmButtonToggle = false;
 	static boolean operateShooterButtonToggle = false;
 	static boolean climberLockButtonToggle = false;	
+	static boolean spotlightToggle = false;
 		
 	/**
 	 * Checks the robot l state and activates the pickup system accordingly.
@@ -73,12 +72,8 @@ public final class OperatorController
 	 */
 	public static void operatePickup(Robot robot)
 	{
-		if (!robot.ballLoadedSwitch.get())
+		if (robot.operatorstick.getPOV(0) == INTAKE_OUT_POV)
 		{
-			robot.ballLoaded = true;	
-		}
-		
-		if (robot.operatorstick.getPOV(0) == INTAKE_OUT_POV){
 			robot.intake.set(DoubleSolenoid.Value.kForward);
 		}
 		else if (robot.operatorstick.getPOV(0) == INTAKE_IN_POV)
@@ -90,9 +85,7 @@ public final class OperatorController
 			robot.intake.set(DoubleSolenoid.Value.kForward);
 		}
 
-		if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
-			robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||
-			robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
+		if (robot.operatorstick.getRawButton(RPM_SHOT_SPEED_BUTTON) || robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON))
 		{
 			if (!pickupButtonToggle)
 			{
@@ -101,7 +94,8 @@ public final class OperatorController
 				pickupButtonToggle = true;
 			}
 		}
-		else if(robot.operatorstick.getRawButton(PICKUP_BUTTON) || (robot.operatorstick.getRawButton(INTAKE_ACTIVE_BUTTON))) {
+		else if(robot.operatorstick.getRawButton(PICKUP_BUTTON) || (robot.operatorstick.getRawButton(INTAKE_ACTIVE_BUTTON)))
+		{
 			if (!pickupButtonToggle)
 			{
 				robot.roller.set(-0.5);
@@ -118,8 +112,9 @@ public final class OperatorController
 				pickupButtonToggle = true;
 			}	
 		}
-		else if (pickupButtonToggle) {
-			robot.roller.set(0);
+		else if (pickupButtonToggle)
+		{
+			robot.roller.set(0.0);
 			pickupButtonToggle = false;
 		}
 	}
@@ -189,9 +184,8 @@ public final class OperatorController
 	 */
 	public static void operateShooter(Robot robot)
 	{
-		if(robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON) || 
-		   robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) || 
-		   robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON) ||
+		if(robot.operatorstick.getRawButton(RPM_SHOT_SPEED_BUTTON) ||
+		   robot.operatorstick.getRawButton(WALL_SHOT_SPEED_BUTTON) ||				
 		   robot.operatorstick.getRawButton(SPITOUT_BUTTON))
 		{
 			if (!operateShooterButtonToggle)
@@ -204,7 +198,6 @@ public final class OperatorController
 			if (robot.operatorstick.getRawButton(SHOOT_BUTTON))
 			{
 				robot.kicker.set(DoubleSolenoid.Value.kForward);
-				robot.ballLoaded = false;
 			}
 			else
 			{
@@ -219,19 +212,13 @@ public final class OperatorController
 					robot.setShooterTargetRPM(WALL_SHOT_RPMS);
 				}
 			}
-			else if (robot.operatorstick.getRawButton(LIP_SHOT_SPEED_BUTTON)){
-				if (robot.getShooterTargetRPM() != LIP_SHOT_RPMS)
-				{
-					robot.setShooterTargetRPM(LIP_SHOT_RPMS);
-				}
-			}
 			else if (robot.operatorstick.getRawButton(SPITOUT_BUTTON)){
 				if (robot.getShooterTargetRPM() != SPITOUT_RPMS)
 				{
 					robot.setShooterTargetRPM(SPITOUT_RPMS);
 				}
 			}
-			else if (robot.operatorstick.getRawButton(ZAXIS_SHOT_SPEED_BUTTON))
+			else if (robot.operatorstick.getRawButton(RPM_SHOT_SPEED_BUTTON))
 			{
 				if (robot.useRPM)
 				{
@@ -322,5 +309,32 @@ public final class OperatorController
 			climberLockButtonToggle = false;
 		}
 		// TODO: the climber lock needs to be tied to the dashboard timer also, so that it auto locks just before the match ends.
+	}
+	
+	/**
+	 * 
+	 * @param robot The robot being operated.
+	 */
+	public static void operateSpotlight(Robot robot)
+	{
+    	if(robot.operatorstick.getRawButton(SPOTLIGHT_BUTTON))
+    	{
+    		if(!spotlightToggle)
+    		{
+    			spotlightToggle = true;
+    			if(robot.spotlight.get() == Relay.Value.kOff)
+    			{
+    				robot.spotlight.set(Relay.Value.kForward);
+    			}
+    			else
+    			{
+    				robot.spotlight.set(Relay.Value.kOff);
+    			}
+    		}
+    	}
+    	else
+    	{
+    		spotlightToggle = false;
+    	}
 	}
 }

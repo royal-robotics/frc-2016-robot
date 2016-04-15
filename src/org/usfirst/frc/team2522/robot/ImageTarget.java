@@ -66,10 +66,16 @@ public class ImageTarget implements Comparator<ImageTarget>, Comparable<ImageTar
 	
 	public boolean IsValidTarget(Image binary)
 	{
-		/*Image ideal = null;
+		if (Width() > 180.0 || Width() < 45.0) {
+			return false;
+		}
+		
+		/*
+		Image ideal = null;
 		NIVision.imaqDuplicate(ideal, binary);
 		setIdealUShape(ideal);
-		return IsValidAspectRatio() && IsShape(binary, ideal, 0.75);*/
+		return IsValidAspectRatio() && IsShape(binary, ideal, 0.75);
+		*/
 		
 		return IsValidAspectRatio();
 	}

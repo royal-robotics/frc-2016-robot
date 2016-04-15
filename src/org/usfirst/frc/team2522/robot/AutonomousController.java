@@ -179,6 +179,10 @@ public final class AutonomousController
 				
 				if (drivePivot(robot, 67.0, 0.65))
 				{
+					// reset encoders / gyro for drive forward to get closer to goal for better targeting
+					robot.resetDriveDistance();
+					robot.resetBearing();
+					
 					autoStep++;
 				}
 	
@@ -186,15 +190,17 @@ public final class AutonomousController
 			}
 			case 2:
 			{
-				if (armMove(robot, LOW_GOAL_SHOT_ANGLE))
+				// new step to drive 26 inches closer to goal for better accuracy.
+				if (driveForward(robot, 0.0, 0.75, 26.0))
 				{
 					autoStep++;
 				}
+				
 				break;
 			}
 			case 3:
 			{
-				if (trackTarget(robot))
+				if (armMove(robot, LOW_GOAL_SHOT_ANGLE))
 				{
 					autoStep++;
 				}
@@ -202,13 +208,21 @@ public final class AutonomousController
 			}
 			case 4:
 			{
-				if (shootBall(robot, SmartDashboard.getNumber("Target RPM"), 1.0))
+				if (trackTarget(robot))
 				{
 					autoStep++;
 				}
 				break;
 			}
 			case 5:
+			{
+				if (shootBall(robot, SmartDashboard.getNumber("Target RPM", 2600.0), 1.0))
+				{
+					autoStep++;
+				}
+				break;
+			}
+			case 6:
 			{
 				if (armMove(robot, ArmController.HOME_ANGLE))
 				{
@@ -296,8 +310,10 @@ public final class AutonomousController
 				break;
 			}
 			default:
+			{
 				driveStop(robot);
-				break;			
+				break;
+			}
 		}
 	}
 
@@ -373,8 +389,10 @@ public final class AutonomousController
 				break;
 			}
 			default:
+			{
 				driveStop(robot);
-				break;			
+				break;
+			}
 		}
 	}
 	
@@ -441,8 +459,10 @@ public final class AutonomousController
 				break;
 			}
 			default:
+			{
 				driveStop(robot);
-				break;			
+				break;
+			}
 		}
 	}
 
@@ -518,8 +538,10 @@ public final class AutonomousController
 				break;
 			}
 			default:
+			{
 				driveStop(robot);
-				break;			
+				break;
+			}
 		}
 	}
 	
@@ -577,7 +599,7 @@ public final class AutonomousController
 			error += 360.0;
 		}
 		
-		if (error < 1.0 && error > -1.0)
+		if (error < 0.5 && error > -0.5)
 		{
 			driveStop(robot);
 			return true;
@@ -811,10 +833,18 @@ public final class AutonomousController
 	{
 		double result = 2500.0;
 
-// calc		result = 2.818 * range + 2269.0;
+		//result = 2.818 * range + 2269.0;
 		result = 2.818 * range + 2200.0;
-		//result = range * (TARGET_SHOT_RPMS[TARGET_SHOT_RPMS.length-1] - TARGET_SHOT_RPMS[0]) / (TARGET_RANGE[TARGET_RANGE.length-1] - TARGET_RANGE[0]);
 		
+		if (result > 2800.0) 
+		{
+			result = 2800.0;
+		}
+		else if (result < 2200.0)
+		{
+			result = 2200.0;
+		}
+
 		return result;
 	}
 	
@@ -830,7 +860,16 @@ public final class AutonomousController
 		//result = -0.2049 * range + 79.55;
 		result = -0.18 * range + 79.55;
 		
-		return result;
+		if (result > 64.0) 
+		{
+			result = 64.0;
+		}
+		else if (result < 56.0)
+		{
+			result = 56.0;
+		}
+		
+		return result + 1.0;		// TODO: hack for competition robot and new PID values.
 	}
 	
 	/***

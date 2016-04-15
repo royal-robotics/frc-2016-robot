@@ -35,6 +35,7 @@ public class Robot extends IterativeRobot
 	VictorSP roller = new VictorSP(7);
 	
 	Relay spotlight = new Relay(0);
+	Relay ledlights = new Relay(1);
 	
 	CANTalon leftShooterWheel = new CANTalon(0);
 	CANTalon rightShooterWheel = new CANTalon(1);
@@ -86,7 +87,6 @@ public class Robot extends IterativeRobot
 	boolean trackingDone = false;
 	boolean driveStraightToggle = false;
 	boolean turnAroundToggle = false;
-	boolean spotlightToggle = false;
 	
 	//Camera
 	CameraServer camera;
@@ -314,36 +314,20 @@ public class Robot extends IterativeRobot
     	
     	OperatorController.operateClimber(this);
     	
-    	// Work the spotlight btn11 //
-    	if(this.operatorstick.getPOV(0) == OperatorController.CLIMBER_ANGLE_POV) {
-    		spotlight.set(Relay.Value.kForward);
-    		if(!spotlightToggle){
-    			spotlightToggle = true;
-    			if(spotlight.get() == Relay.Value.kForward) {
-    				spotlight.set(Relay.Value.kOff);
-    			} else {
-    				spotlight.set(Relay.Value.kForward);
-    			}
-    		}
-    	} else {
-    		spotlightToggle = false;
-    	}
-    	
-    	if(this.operatorstick.getPOV(0) == OperatorController.CLIMBER_ANGLE_POV) {
-    		spotlight.set(Relay.Value.kForward);
-    	} else {
-    		spotlight.set(Relay.Value.kOff);
-    	}
+    	OperatorController.operateSpotlight(this);
     	
     	// Check for and toggle the drive mode from tank to arcade if button 3 on left stick is pressed.
     	//
-    	if (leftstick.getRawButton(OperatorController.DRIVE_MODE_CHANGE_BUTTON) && !driveModeToggle) {
-    		if (!driveModeToggle) {
+    	if (leftstick.getRawButton(OperatorController.DRIVE_MODE_CHANGE_BUTTON))
+    	{
+    		if (!driveModeToggle)
+    		{
     			arcadeMode = ! arcadeMode;
         		driveModeToggle = true;
     		}
     	}
-    	else {
+    	else
+    	{
     		driveModeToggle = false;
     	}
     	
