@@ -55,7 +55,7 @@ public final class OperatorController
 	public static final double WALL_SHOT_ANGLE = 102.5;		// 
 	public static final double WALL_SHOT_RPMS = 2400.0;		// 
 	
-	public static final double FIELD_SHOT_ANGLE = 64.0;		// TODO: should be 60 value of 64 to adapt with current PID
+	public static final double FIELD_SHOT_ANGLE = 60.0;		// 
 	public static final double FIELD_SHOT_RPMS = 2500.0;	// 
 	
 	// Toggle values used to control the various button states.
@@ -77,7 +77,7 @@ public final class OperatorController
 		{
 			robot.intake.set(DoubleSolenoid.Value.kForward);
 		}
-		else if (robot.operatorstick.getPOV(0) == INTAKE_IN_POV)
+		else if (robot.operatorstick.getPOV(0) == INTAKE_IN_POV || robot.leftstick.getRawButton(TRACK_TARGET_BUTTON) || robot.rightstick.getRawButton(TRACK_TARGET_BUTTON))
 		{
 			robot.intake.set(DoubleSolenoid.Value.kReverse);
 		}
@@ -164,10 +164,10 @@ public final class OperatorController
 		{
 			operateArmButtonToggle = true;
 			if (axisValue > 0.1) {
-				robot.armController.setSetpoint(robot.armAngle.pidGet() + (-50.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
+				robot.armController.setSetpoint(robot.armAngle.pidGet() + (-30.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
 			}
 			else if (axisValue < -0.1) {
-				robot.armController.setSetpoint(robot.armAngle.pidGet() + ( 50.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
+				robot.armController.setSetpoint(robot.armAngle.pidGet() + ( 30.0 * ArmController.VOLTS_PER_DEGREE * (axisValue * axisValue)));
 			}
 		}
 		else if (operateArmButtonToggle)

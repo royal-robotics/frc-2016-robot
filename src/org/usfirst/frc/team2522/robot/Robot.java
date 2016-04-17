@@ -96,9 +96,9 @@ public class Robot extends IterativeRobot
     Image diff;
 	Image binaryFrame;
 	Image particalFrame;
-	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 252);
-	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(252, 255);
-	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
+	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 128);
+	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(25, 255);
+	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 128);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
@@ -381,7 +381,7 @@ public class Robot extends IterativeRobot
 	    		}
 	    		else
 	    		{
-					if (AutonomousController.drivePivot(this, trackingTargetAngle, 0.40))
+					if (AutonomousController.drivePivot(this, trackingTargetAngle, 0.50))
 					{
 						trackingDone = true;
 					}

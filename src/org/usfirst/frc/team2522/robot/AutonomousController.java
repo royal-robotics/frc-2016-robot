@@ -178,7 +178,7 @@ public final class AutonomousController
 					robot.setShooterTargetRPM(LOW_BAR_SHOT_RPMS);
 				}
 				
-				if (drivePivot(robot, 67.0, 0.65))
+				if (drivePivot(robot, 67.0, 0.50))
 				{
 					// reset encoders / gyro for drive forward to get closer to goal for better targeting
 					robot.resetDriveDistance();
@@ -813,8 +813,9 @@ public final class AutonomousController
 		
 		if (target != null)
 		{
+			//result = -2.11 * target.Width() + 340.444;
 			result = -0.9126 * target.Width() + 225.4;
-			//result = -6.227  * target.Height() + 456.2;
+			//result = -6.227 * target.Height() + 456.2;
 			SmartDashboard.putNumber("Target Range", result);
 		}
 		else
@@ -835,7 +836,8 @@ public final class AutonomousController
 		double result = 2500.0;
 
 		//result = 2.818 * range + 2269.0;
-		result = 2.818 * range + 2200.0;
+		//result = 2.818 * range + 2200.0;
+		result = 3.261 * range + 2143.748 - 50.0;
 		
 		if (result > 2800.0) 
 		{
@@ -859,7 +861,8 @@ public final class AutonomousController
 		double result = 60.0;
 		
 		//result = -0.2049 * range + 79.55;
-		result = -0.18 * range + 79.55;
+		//result = -0.18 * range + 79.55;
+		//result = -0.115 * range + 74.069;
 		
 		if (result > 64.0) 
 		{
