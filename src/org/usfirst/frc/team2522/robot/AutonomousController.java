@@ -600,7 +600,7 @@ public final class AutonomousController
 			error += 360.0;
 		}
 		
-		if (error < 0.5 && error > -0.5)
+		if (error < 0.25 && error > -0.25)
 		{
 			driveStop(robot);
 			return true;
@@ -813,8 +813,19 @@ public final class AutonomousController
 		
 		if (target != null)
 		{
-			//result = -2.11 * target.Width() + 340.444;
-			result = -0.9126 * target.Width() + 225.4;
+
+			double FWp	= 640.0;	// camera width field of view in pixels (image width)
+			double FWd	= 51.0;		// camera width filed of view in degrees
+			double TWi	= 20.0;		// target width in inches
+
+			double FHp	= 480.0;	// camera height field of view in pixels (image width)
+			double FHd	= 39.5;		// camera height filed of view in degrees
+			double THi	= 12.0;		// target height in inches
+			
+			result = (TWi * FWp) / (2.0 * target.Width() * Math.tan((3.1415 / 180.0) * (FWd / 2.0)));			
+			//result = (THi * FHp) / (2.0 * target.Height() * Math.tan((3.1415 / 180.0) * (FHd / 2.0)));
+			
+			//result = -0.9126 * target.Width() + 225.4;
 			//result = -6.227 * target.Height() + 456.2;
 			SmartDashboard.putNumber("Target Range", result);
 		}
@@ -833,11 +844,12 @@ public final class AutonomousController
 	 */
 	public static double getShotRPMForRange(double range)
 	{
-		double result = 2500.0;
+		double result = 2725.0;
 
 		//result = 2.818 * range + 2269.0;
 		//result = 2.818 * range + 2200.0;
-		result = 3.261 * range + 2143.748 - 50.0;
+		
+		//result = 3.261 * range + 2143.748 - 50.0;
 		
 		if (result > 2800.0) 
 		{
@@ -859,18 +871,19 @@ public final class AutonomousController
 	public static double getArmAngleForRange(double range)
 	{
 		double result = 60.0;
-		
+
+		result = -0.145 * range + 72.88 -1.0;
 		//result = -0.2049 * range + 79.55;
 		//result = -0.18 * range + 79.55;
 		//result = -0.115 * range + 74.069;
 		
-		if (result > 64.0) 
+		if (result > 65.0) 
 		{
-			result = 64.0;
+			result = 65.0;
 		}
-		else if (result < 56.0)
+		else if (result < 50.0)
 		{
-			result = 56.0;
+			result = 50.0;
 		}
 		
 		return result + 1.0;		// TODO: hack for competition robot and new PID values.
