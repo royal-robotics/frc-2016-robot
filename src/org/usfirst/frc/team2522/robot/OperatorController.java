@@ -49,13 +49,13 @@ public final class OperatorController
 	public static final double PICKUP_ANGLE = -20.0;		//
 	public static final double PICKUP_RPMS = -2000.0;		// 
 	
-	public static final double SPITOUT_ANGLE = -10.0;		//
+	public static final double SPITOUT_ANGLE = -7.0;		//
 	public static final double SPITOUT_RPMS = 1850.0;		// 
 	
-	public static final double WALL_SHOT_ANGLE = 102.5;		// 
-	public static final double WALL_SHOT_RPMS = 2400.0;		// 
+	public static final double WALL_SHOT_ANGLE = 109.4;	// 
+	public static final double WALL_SHOT_RPMS = 2500.0;		// 
 	
-	public static final double FIELD_SHOT_ANGLE = 60.0;		// 
+	public static final double FIELD_SHOT_ANGLE = 55.0;		// 
 	public static final double FIELD_SHOT_RPMS = 2500.0;	// 
 	
 	// Toggle values used to control the various button states.

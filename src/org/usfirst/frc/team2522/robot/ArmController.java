@@ -15,17 +15,17 @@ public class ArmController extends PIDController
 
 	// Practice Robot Values
 	//
-	public static final double HOME_DEFAULT_VOLTAGE = 2.511; //Practice value
-	public static final double FLOOR_DEFAULT_VOLTAGE = 1.826;
-	public static final double HOME_ANGLE = 117.7;	// degrees
-	public static final double FLOOR_ANGLE = -49.0;			  
+	//public static final double HOME_DEFAULT_VOLTAGE = 2.565; //Practice value
+	//public static final double FLOOR_DEFAULT_VOLTAGE = 1.885;
+	//public static final double HOME_ANGLE = 116.2;	// degrees
+	//public static final double FLOOR_ANGLE = -49.5;			  
 
 	// Competition Robot Values
 	//
-	//public static final double HOME_DEFAULT_VOLTAGE = 3.038;
-	//public static final double FLOOR_DEFAULT_VOLTAGE = 2.321;
-	//public static final double HOME_ANGLE = 123.8;	// degrees
-	//public static final double FLOOR_ANGLE = -47.7;			  
+	public static final double HOME_DEFAULT_VOLTAGE = 3.010;
+	public static final double FLOOR_DEFAULT_VOLTAGE = 2.363;
+	public static final double HOME_ANGLE = 111.9;	// degrees
+	public static final double FLOOR_ANGLE = -51.1;			  
 
 	
 	public static double VOLTS_PER_DEGREE = (HOME_DEFAULT_VOLTAGE - FLOOR_DEFAULT_VOLTAGE) / (HOME_ANGLE - FLOOR_ANGLE);
@@ -47,7 +47,9 @@ public class ArmController extends PIDController
 	
 	public ArmController(PIDSource armSensor, PIDOutput armMotor)
 	{
-		super(20.0, 0.0, 8.0, armSensor, armMotor);	// work in progress
+
+		super(15.0, 0.0, 6.0, armSensor, armMotor);
+		//super(20.0, 0.0, 8.0, armSensor, armMotor);// work in progress
 //		super(5.0, 0.0, 0.75, armSensor, armMotor);	// work in progress
 //		super(6.0, 0.5, 2.5, armSensor, armMotor);
 		this.armMotor = armMotor;

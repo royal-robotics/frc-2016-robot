@@ -18,10 +18,10 @@ public final class AutonomousController
 {
 	public static final double LOW_GOAL_TRAVERSE_ANGLE = -20.0;	// degrees
 	
-	public static final double LOW_GOAL_SHOT_ANGLE = 60.0;		// degrees (should be 60)
+	public static final double LOW_GOAL_SHOT_ANGLE = 55.0;		// degrees (should be 60)
 	public static final double LOW_BAR_SHOT_RPMS = 2600.0;		// practice bot value
 
-	public static final double DRIVE_FORWARD_SHOT_ANGLE = 60.0;		// degrees (should be 60)
+	public static final double DRIVE_FORWARD_SHOT_ANGLE = 55.0;		// degrees (should be 60)
 	public static final double DRIVE_FORWARD_SHOT_RPMS = 2600.0;	// practice bot value
 	
 	public static final double BATTER_EDGE = 48;
@@ -72,7 +72,12 @@ public final class AutonomousController
 	static int autoStep = 0;
 	
 	static Timer shotDelayTimer = new Timer();
-	static double trackingTargetAngle = 180.0;		
+	static double trackingTargetAngle = 180.0;
+	
+	static Timer startDelayTimer = new Timer();
+	static double startDelayValue = 0.0;
+	
+	static Timer restDelayTimer = new Timer();
 	
 
 	
@@ -122,6 +127,10 @@ public final class AutonomousController
 	
 	public static void RunAutonomous(Robot robot)
 	{
+		if (startDelayTimer.get() < startDelayValue) {
+			return;
+		}
+		
 		switch(autoMode)
 		{
 			case 1:
@@ -249,7 +258,7 @@ public final class AutonomousController
 		{
 			case 0:
 			{
-				if (driveForward(robot, 0.0, 0.80, 210.0))
+				if (driveForward(robot, 0.0, 0.80, 216.0))
 				{
 					autoStep++;
 				}
@@ -271,7 +280,7 @@ public final class AutonomousController
 			}
 			case 1:
 			{
-				if (drivePivot(robot, 30.0, 0.65))
+				if (drivePivot(robot, 35.0, 0.65))
 				{
 					autoStep++;
 				}
@@ -726,16 +735,24 @@ public final class AutonomousController
 	{
 		if (trackingTargetAngle == 180.0)
 		{
-			ImageTarget target = AutonomousController.getTarget(robot);
-			double trackingAngle = AutonomousController.getTargetAngle(robot, target);
-			double range = AutonomousController.getTargetRange(target);
-
-			if (target != null)
+			if (restDelayTimer.get() == 0)
 			{
-    			SmartDashboard.putNumber("Target RPM", AutonomousController.getShotRPMForRange(range));
-    			robot.armController.setTargetAngle(AutonomousController.getArmAngleForRange(range));
-    			
-				trackingTargetAngle = robot.getBearing() + trackingAngle;
+				restDelayTimer.start();
+			}
+
+			if (restDelayTimer.get() > 3.5)
+			{
+				ImageTarget target = AutonomousController.getTarget(robot);
+				double trackingAngle = AutonomousController.getTargetAngle(robot, target);
+				double range = AutonomousController.getTargetRange(target);
+	
+				if (target != null)
+				{
+	    			SmartDashboard.putNumber("Target RPM", AutonomousController.getShotRPMForRange(range));
+	    			robot.armController.setTargetAngle(AutonomousController.getArmAngleForRange(range));
+	    			
+					trackingTargetAngle = robot.getBearing() + trackingAngle;
+				}
 			}
 		}
 		else
@@ -872,7 +889,7 @@ public final class AutonomousController
 	{
 		double result = 60.0;
 
-		result = -0.145 * range + 72.88 -1.0;
+		result = -0.145 * range + 72.88;
 		//result = -0.2049 * range + 79.55;
 		//result = -0.18 * range + 79.55;
 		//result = -0.115 * range + 74.069;
@@ -886,7 +903,7 @@ public final class AutonomousController
 			result = 50.0;
 		}
 		
-		return result + 1.0;		// TODO: hack for competition robot and new PID values.
+		return result - 2.5;		// TODO: hack for competition robot and new PID values.
 	}
 	
 	/***

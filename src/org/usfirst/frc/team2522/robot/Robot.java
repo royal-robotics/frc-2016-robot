@@ -98,7 +98,7 @@ public class Robot extends IterativeRobot
 	Image particalFrame;
 	NIVision.Range REFLECTIVE_RED_RANGE = new NIVision.Range(0, 128);
 	NIVision.Range REFLECTIVE_GREEN_RANGE = new NIVision.Range(25, 255);
-	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 128);
+	NIVision.Range REFLECTIVE_BLUE_RANGE = new NIVision.Range(0, 255);
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
 	
@@ -263,6 +263,15 @@ public class Robot extends IterativeRobot
 		AutonomousController.trackingTargetAngle = 180.0;
 		AutonomousController.shotDelayTimer.stop();
 		AutonomousController.shotDelayTimer.reset();
+
+		AutonomousController.restDelayTimer.stop();
+		AutonomousController.restDelayTimer.reset();
+		
+		AutonomousController.startDelayTimer.stop();
+		AutonomousController.startDelayTimer.reset();
+		AutonomousController.startDelayTimer.start();
+		
+		AutonomousController.startDelayValue = rightstick.getZ() + 1.0;
 		
 		ballLoaded = true;	// we always start autonomous with a ball loaded.
 		
@@ -575,6 +584,7 @@ public class Robot extends IterativeRobot
 
     	SmartDashboard.putString("Auto Mode", AutonomousController.autoModeString);
     	SmartDashboard.putNumber("Auto Step", AutonomousController.autoStep);
+    	SmartDashboard.putNumber("Auto Delay", rightstick.getZ() + 1.0);
     	
     	SmartDashboard.putString("Drive Gear", (shifter.get() == DoubleSolenoid.Value.kForward) ? "LOW" : "HIGH");
     	SmartDashboard.putString("Drive Mode", arcadeMode ? "Arcade" : "Tank");
@@ -639,16 +649,31 @@ public class Robot extends IterativeRobot
 	    	}
 	    	else if (leftstick.getRawButton(OperatorController.SHOW_TARGETS_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_TARGETS_BUTTON))
     		{
+		    	try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 	    		AutonomousController.getTargetAngle(this);
 	    		camera.setImage(frame);
 			}
 	    	else if (leftstick.getRawButton(OperatorController.SHOW_IMAGE_DIFF_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_IMAGE_DIFF_BUTTON))
     		{
+		    	try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 	    		AutonomousController.getTargetAngle(this);
 	    		camera.setImage(diff);
 			}
 	    	else if (leftstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON) || rightstick.getRawButton(OperatorController.SHOW_IMAGE_FILTER_BUTTON))
     		{
+		    	try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 	    		AutonomousController.getTargetAngle(this);
 	    		camera.setImage(binaryFrame);
 			}
